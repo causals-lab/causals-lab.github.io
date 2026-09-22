@@ -10,7 +10,7 @@ button,input,textarea{font:inherit}
 .wrap{width:min(100% - 112px,1328px);margin-inline:auto}
 .site-header{height:84px;padding:0 56px;border-bottom:1px solid #ffffff1c;display:flex;align-items:center;justify-content:space-between;gap:30px}
 .wordmark,.footer-brand{font-weight:750;letter-spacing:-.055em;font-size:1.45rem;white-space:nowrap}
-.mark{font-size:1.5rem;color:#7ee0ca;margin-right:5px}
+.brand-mark{display:inline-block;width:27px;height:27px;margin-right:5px;vertical-align:-6px}
 .wordmark-light{font-weight:400;color:#abc4bf}
 .site-header nav{display:flex;align-items:center;gap:27px}
 .site-header nav a,.header-cta{font-size:.83rem;font-weight:600;color:#b1c5c3;white-space:nowrap}

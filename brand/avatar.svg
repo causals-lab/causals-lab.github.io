@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Causals Lab avatar</title>
+  <rect width="512" height="512" fill="#0c1820"/>
+  <g transform="translate(64 64) scale(3)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M27 91 62 65 99 31" stroke="#7ee0ca" stroke-width="9"/>
+      <path d="m62 65 38 28" stroke="#e2b472" stroke-width="6" stroke-dasharray="1 12"/>
+    </g>
+    <circle cx="27" cy="91" r="8" fill="#7ee0ca"/>
+    <circle cx="62" cy="65" r="10" fill="#e2b472"/>
+    <circle cx="99" cy="31" r="8" fill="#7ee0ca"/>
+    <circle cx="100" cy="93" r="8" fill="none" stroke="#e2b472" stroke-width="5"/>
+  </g>
+</svg>
