@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Causals Explore</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --line:#e4e7ec; --line-soft:#eef0f3;
+  --ink:#1b2430; --ink-2:#5a6675; --ink-3:#8b96a5;
+  --accent:#2563eb; --accent-soft:#eff4ff;
+  --danger:#d9534f;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- 顶栏 ---------- */
+header{
+  background:var(--card); border-bottom:1px solid var(--line);
+  padding:14px 22px; display:flex; align-items:center; gap:22px; flex-wrap:wrap;
+}
+.brand{font-size:16px; font-weight:650; letter-spacing:.2px; white-space:nowrap}
+.brand span:not(.brand-main){color:var(--ink-3); font-weight:400; font-size:13px; margin-left:8px}
+.kpis{display:flex; gap:26px; margin-left:auto; flex-wrap:wrap}
+.kpi{min-width:96px}
+.kpi b{display:block; font-size:22px; font-weight:650; line-height:1.25; font-variant-numeric:tabular-nums}
+.kpi i{display:block; font-style:normal; font-size:12px; color:var(--ink-3); margin-top:1px}
+.kpi.small b{font-size:17px; color:var(--ink-2)}
+.locale{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+.locale a{color:var(--ink-3)}
+.locale a.active{color:var(--accent);font-weight:700}
+
+/* ---------- 主体三栏 ---------- */
+main{
+  display:grid; grid-template-columns:296px minmax(0,1fr) 0px;
+  gap:14px; padding:14px 22px 18px;
+  height:calc(100vh - 66px); transition:grid-template-columns .2s ease;
+  overflow:hidden;       /* grid item 默认 min-height:auto, vis 的 canvas 容易把 stage 撑出 main, 截掉溢出 */
+}
+main.drawer-open{grid-template-columns:296px minmax(0,1fr) 340px}
+
+.card{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--r); padding:14px 16px; margin-bottom:12px;
+}
+.card h3{
+  margin:0 0 10px; font-size:12px; font-weight:650;
+  color:var(--ink-3); letter-spacing:.6px; text-transform:uppercase;
+}
+
+/* ---------- 左栏 ---------- */
+aside#left{overflow-y:auto; padding-right:2px}
+aside#left::-webkit-scrollbar{width:8px}
+aside#left::-webkit-scrollbar-thumb{background:#d7dbe0; border-radius:4px}
+
+/* 分布条 */
+.dist{margin-bottom:3px}
+.dist-row{display:flex; align-items:center; gap:8px; padding:3px 0; cursor:pointer; border-radius:5px}
+.dist-row:hover{background:#f4f6f8}
+.dist-row.off{opacity:.32}
+.dist-dot{width:9px; height:9px; border-radius:50%; flex:none}
+.dist-name{flex:none; width:82px; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dist-bar{flex:1; height:7px; background:var(--line-soft); border-radius:4px; overflow:hidden}
+.dist-bar i{display:block; height:100%; border-radius:4px}
+.dist-num{flex:none; width:62px; text-align:right; font-size:12px; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.dist-pct{flex:none; width:38px; text-align:right; font-size:11px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+/* 关系名 */
+.rel-row{display:flex; justify-content:space-between; padding:3px 0; font-size:12.5px; gap:10px}
+.rel-row span{color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rel-row b{font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums}
+
+/* 控件 */
+.ctrl{margin-bottom:11px}
+.ctrl label{display:block; font-size:12px; color:var(--ink-3); margin-bottom:5px}
+.seg{display:flex; background:var(--line-soft); border-radius:7px; padding:2px}
+.seg button{
+  flex:1; border:0; background:transparent; padding:6px 4px; border-radius:5px;
+  font-size:12.5px; color:var(--ink-2); cursor:pointer; font-family:inherit;
+}
+.seg button.on{background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.07)}
+select{
+  width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+  background:var(--card); color:var(--ink); font-size:12.5px; font-family:inherit;
+}
+.btn{
+  width:100%; padding:8px; border:1px solid var(--line); border-radius:7px;
+  background:var(--card); color:var(--ink); font-size:13px; cursor:pointer; font-family:inherit;
+}
+.btn:hover{background:#f4f6f8}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+.btn.primary:hover{background:#1d4fd8}
+.btn.primary:disabled{background:#9db8ee; border-color:#9db8ee; cursor:default}
+.chk{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2); padding:2px 0; cursor:pointer}
+.chk input{margin:0}
+.hint{font-size:11.5px; color:var(--ink-3); line-height:1.55; margin-top:5px}
+
+/* ---------- 中间图区 ---------- */
+section#stage{display:flex; flex-direction:column; gap:10px; min-width:0}
+.toolbar{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+  padding:9px 13px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  position:relative;    /* 给全图搜索下拉一个定位锚 */
+}
+.coverage{font-size:12.5px; color:var(--ink-2)}
+.coverage b{color:var(--ink); font-weight:650; font-variant-numeric:tabular-nums}
+.coverage em{font-style:normal; color:var(--ink-3)}
+#search{
+  margin-left:auto; width:190px; padding:6px 10px; border:1px solid var(--line);
+  border-radius:6px; font-size:12.5px; font-family:inherit;
+}
+
+/* ---------- 全图搜索下拉 (画布没命中 → 查本地 Neo4j) ---------- */
+#find-list{
+  position:absolute; top:calc(100% + 6px); right:0; width:360px; max-height:300px;
+  overflow-y:auto; background:var(--card); border:1px solid var(--line);
+  border-radius:8px; box-shadow:0 8px 24px rgba(20,30,45,.14); z-index:30; display:none;
+}
+#find-list.on{display:block}
+.find-head{
+  padding:7px 12px 5px; font-size:11px; color:var(--ink-3);
+  border-bottom:1px solid var(--line-soft); letter-spacing:.3px;
+}
+.find-row{display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; font-size:12.5px}
+.find-row:hover{background:#f4f6f8}
+.find-row i{width:8px; height:8px; border-radius:50%; flex:none}
+.find-row .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.find-row .tp{color:var(--ink-3); font-size:11px; flex:none}
+.find-row .dg{color:var(--ink-3); font-size:11px; flex:none; font-variant-numeric:tabular-nums}
+
+/* ---------- 展开反馈 toast ---------- */
+#toast{
+  position:absolute; right:12px; bottom:12px; z-index:6;
+  background:rgba(27,36,48,.92); color:#fff; font-size:12.5px;
+  padding:7px 13px; border-radius:8px; opacity:0; transform:translateY(6px);
+  transition:opacity .25s ease, transform .25s ease; pointer-events:none;
+  max-width:72%;
+}
+#toast.on{opacity:1; transform:translateY(0)}
+#netwrap{
+  /* 固定高度替代 flex:1 —— flex:1 + min-height 让 vis-network 的 canvas 能把容器
+     撑大, 配合 main 的 overflow:hidden 也会出现 stage 比 main 高的怪现象。 */
+  height:calc(100vh - 132px); background:var(--card); border:1px solid var(--line);
+  border-radius:var(--r); position:relative; overflow:hidden;
+}
+#net{width:100%; height:100%}
+.overlay{
+  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.86); font-size:13.5px; color:var(--ink-2); z-index:5;
+}
+.overlay.on{display:flex}
+/* 布局阶段: 只显示一条顶部进度, 不挡住正在成形的图。
+   全屏白幕 + 静止 spinner 会让 13 秒的力导向看起来像死机, 实际上图在动。 */
+.overlay.soft{
+  inset:auto 0 0 0; height:auto; align-items:flex-start; justify-content:flex-start;
+  background:transparent; pointer-events:none;
+}
+.overlay.soft .spin{display:none}
+.overlay.soft #ovl-text{
+  background:rgba(37,99,235,.92); color:#fff; font-size:12px; font-weight:500;
+  padding:5px 14px; border-radius:0 0 8px 0; box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.overlay .spin{
+  width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;margin-right:9px;animation:sp .7s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+.legend{
+  position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.94);
+  border:1px solid var(--line); border-radius:8px; padding:8px 10px; z-index:4;
+  display:flex; flex-wrap:wrap; gap:5px 12px; max-width:calc(100% - 24px);
+}
+.legend div{display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-2)}
+.legend i{width:8px;height:8px;border-radius:50%;display:block}
+
+/* ---------- 右侧抽屉 ---------- */
+aside#drawer{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+  overflow-y:auto; padding:0; display:none;
+}
+main.drawer-open aside#drawer{display:block}
+.dr-head{
+  padding:13px 15px; border-bottom:1px solid var(--line-soft);
+  position:sticky; top:0; background:var(--card); z-index:2;
+}
+.dr-head .close{
+  float:right; cursor:pointer; color:var(--ink-3); font-size:17px; line-height:1; padding:0 2px;
+}
+.dr-head .close:hover{color:var(--ink)}
+.dr-title{font-size:15px; font-weight:650; word-break:break-word; padding-right:20px}
+.dr-sub{font-size:12px; color:var(--ink-3); margin-top:3px}
+.tag{
+  display:inline-block; padding:1px 7px; border-radius:4px; font-size:11.5px;
+  font-weight:600; margin-right:5px;
+}
+.tag.sus{background:#fdecea; color:#b3261e}
+/* ★ 09-24：同名节点角标 —— 图上还有别的节点叫同一个名字时提示 */
+.tag.tw{background:#fff4e0; color:#b25e00; border:1px solid #f0c477}
+.dr-body{padding:12px 15px 20px}
+.dr-body h4{
+  margin:14px 0 7px; font-size:12px; color:var(--ink-3);
+  letter-spacing:.5px; text-transform:uppercase; font-weight:650;
+}
+.dr-body h4:first-child{margin-top:0}
+.nb{
+  display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:6px;
+  font-size:12.5px; cursor:pointer;
+}
+.nb:hover{background:#f4f6f8}
+.nb i{width:7px;height:7px;border-radius:50%;flex:none}
+.nb .rel{
+  color:var(--ink-3); font-size:11px; background:var(--line-soft);
+  padding:0 5px; border-radius:3px; flex:none;
+}
+.nb .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb .ar{color:var(--ink-3); flex:none; font-size:11px}
+/* ---- drawer 富化 + 溯源 (2026-09-10) ---- */
+.nb .tm{color:var(--ink-3); font-size:10.5px; flex:none; font-variant-numeric:tabular-nums}
+.nb .src{
+  flex:none; color:#2563eb; cursor:pointer; font-size:11px; font-weight:600;
+  padding:0 4px; border-radius:3px; line-height:1.5;
+}
+.nb .src:hover{background:#e8f0fe}
+.pair-block{
+  margin:2px 0 6px 14px; padding:8px 10px; background:#f8fafc;
+  border:1px solid var(--line-soft); border-radius:8px; font-size:12px;
+}
+.pair-block .pe{padding:5px 0; border-bottom:1px dashed var(--line-soft)}
+.pair-block .pe:last-child{border-bottom:0}
+.pair-block .pe .h{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+.pair-block .pe .rl{font-weight:600}
+.pair-block .pe .wd{color:var(--ink-3); font-size:11px; font-variant-numeric:tabular-nums}
+.pair-block .pe .ft{color:var(--ink-2); margin-top:2px; line-height:1.45}
+.pair-block .pe .nw{margin-top:3px; padding-left:10px; border-left:2px solid var(--line-soft)}
+.pair-block .pe .nw .m{font-size:11.5px; color:var(--ink-3)}
+.latest{
+  padding:9px 11px; margin-bottom:10px; background:#f0f7ff;
+  border:1px solid #cfe3fb; border-radius:8px; font-size:12.5px; line-height:1.5;
+}
+.latest b{color:#1d4ed8}
+.latest .ft{color:var(--ink-2); margin-top:2px; font-size:12px}
+#edgecard{
+  position:absolute; right:14px; bottom:14px; width:360px; max-height:60%;
+  overflow-y:auto; background:#fff; border:1px solid var(--line);
+  border-radius:10px; box-shadow:0 8px 28px rgba(15,23,42,.16);
+  padding:12px 14px; z-index:25; display:none; font-size:12.5px;
+}
+#edgecard.on{display:block}
+#edgecard .ec-title{font-weight:650; font-size:13px; margin-bottom:6px}
+#edgecard .ec-sub{color:var(--ink-3); font-size:11.5px; margin-bottom:8px}
+.news{padding:7px 0; border-bottom:1px solid var(--line-soft)}
+.news:last-child{border-bottom:0}
+.news .m{font-size:12px; color:var(--ink-2)}
+.news .m b{color:var(--ink); font-weight:600}
+.news .m span{color:var(--ink-3); margin-left:6px; font-size:11.5px}
+.news .x{font-size:12px; color:var(--ink-2); margin-top:2px}
+.empty{color:var(--ink-3); font-size:12.5px; padding:4px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="brand-main" data-en="NewsGraph · Full Graph">NewsGraph · 全图</span><span data-en="Unfiltered source graph">未经标的筛选的原始图谱</span></div>
+  <div class="kpis" id="kpis"><span class="kpi"><b>…</b><i data-en="Loading">加载中</i></span></div>
+  <nav class="locale" aria-label="Language"><a id="lang-en" href="?lang=en">EN</a><span>·</span><a id="lang-zh" href="?lang=zh">中文</a></nav>
+</header>
+
+<main>
+  <!-- ============ 左栏: 构成 ============ -->
+  <aside id="left">
+    <div class="card">
+      <h3 data-en="Entity composition">实体构成</h3>
+      <div id="dist" class="dist"></div>
+    </div>
+
+    <div class="card">
+      <h3 data-en="Relationship types">关系类型</h3>
+      <div id="rels"></div>
+    </div>
+
+    <div class="card">
+      <h3 data-en="View settings">视图设置</h3>
+      <!-- rt-only: 只在实时接口模式 (?mode=realtime 或无 bundle 回退) 有用的控件。
+           bundle 模式 (日常形态) 下它们全部失效, boot 成功后会整体隐藏,
+           否则"失效控件还挂在页面上"会跟档位选择器混淆 (2026-09-04 用户反馈)。 -->
+      <div class="ctrl rt-only">
+        <label data-en="Layers">图层</label>
+        <div class="seg" id="seg-layer">
+          <button data-v="knowledge" class="on" data-en="Knowledge">知识层</button>
+          <button data-v="news" data-en="News">新闻层</button>
+          <button data-v="both" data-en="Both">两者</button>
+        </div>
+        <div class="hint" id="layer-hint"></div>
+      </div>
+      <div class="ctrl rt-only">
+        <label data-en="Core entities (Top N)">核心实体数 Top-N</label>
+        <select id="sel-topn">
+          <option value="600">600</option>
+          <option value="1500" selected>1,500</option>
+          <option value="3000">3,000</option>
+          <option value="6000">6,000</option>
+        </select>
+      </div>
+      <div class="ctrl" id="wrap-newscap" style="display:none">
+        <label data-en="News-edge sample limit">新闻边上限 (抽样)</label>
+        <select id="sel-newscap">
+          <option value="1500">1,500</option>
+          <option value="3000" selected>3,000</option>
+          <option value="8000">8,000</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label id="lbl-focus" data-en="Focus">聚焦</label>
+        <select id="sel-focus">
+          <option value="0" selected data-en="Full view (Top 1,500)">全图 (Top 1,500)</option>
+          <option value="30" data-en="Top 30 core">Top 30 核心</option>
+          <option value="100">Top 100</option>
+          <option value="300">Top 300</option>
+          <option value="800">Top 800</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label class="chk"><input type="checkbox" id="chk-hideedges"> <span data-en="Hide edges (node density only)">隐藏连线 (只看节点密度)</span></label>
+        <label class="chk"><input type="checkbox" id="chk-hideother"> <span data-en="Hide narrative edges (OTHER)">隐藏叙事边 (OTHER)</span></label>
+        <label class="chk"><input type="checkbox" id="chk-labels"> <span data-en="Show all labels">显示全部标签</span></label>
+        <!-- 默认开启 (2026-09-01 用户定): 演示要有"科技感", 静止的图打动不了人。
+             缓扩档 (2026-09-05 用户拍板): 图持续缓慢舒展, 不定格;
+             点击节点会把它的邻居推开一圈 (选中扩开)。关掉即全停。 -->
+        <label class="chk"><input type="checkbox" id="chk-animate" checked> <span data-en="Animate nodes">动效 (节点飘动)</span></label>
+      <div class="hint" id="anim-hint"></div>
+        <!-- 扫雷式探索 (2026-09-01): 点击节点 = 开详情 + 把邻居加到画布 (只加不减)。
+             邻居从本地 Neo4j 实时拉 (/api/panorama/expand); 服务器 (无图库) 上自动
+             降级为只开详情, 不报错不假装。取消勾选则点击只看详情、不往画布加东西。
+             展开深度 (2026-09-05, 用户反馈 1 跳太少): BFS 逐层外扩, 默认 2 跳。 -->
+        <label class="chk"><input type="checkbox" id="chk-expand" checked> <span data-en="Expand neighbors on click">点击展开邻域 (扫雷式)</span></label>
+        <div class="ctrl" style="margin:6px 0 0 24px">
+          <label style="margin:0" data-en="Expansion depth">展开深度</label>
+          <div class="seg" id="seg-depth">
+            <button data-v="1" data-en="1 hop">1 跳</button>
+            <button data-v="2" class="on" data-en="2 hops">2 跳</button>
+            <button data-v="3" data-en="3 hops">3 跳</button>
+          </div>
+          <div class="hint" style="margin:4px 0 0" data-en="Number of neighbor layers per click (up to 240 nodes)">一次点击翻开几层邻域 (单次封顶 240 节点)</div>
+        </div>
+      </div>
+      <button class="btn primary rt-only" id="btn-reload" data-en="Reload">重新加载</button>
+      <button class="btn" id="btn-relayout" data-en="Re-layout">重新布局</button>
+      <div class="hint" data-en="View settings change only the display, not the selected data.">视图选项只改渲染, 不改数据取舍。切走再切回就是同一批数据。</div>
+      <!-- 这条原来写"收敛后会自动锁定物理引擎", 那是实时接口时代的做法。
+           bundle 模式下坐标是本地预计算好的, 物理引擎完全由上面那个开关说了算,
+           不存在自动锁定 —— 默认开动效之后这句更是在自相矛盾, 改掉。 -->
+      <div class="hint" data-en="Node positions are precomputed. Animation gently spreads crowded areas; choose Re-layout to rearrange the graph.">节点坐标由本地 networkx 预计算, 开动效是缓扩 (拥挤处慢慢散开);要整体重排点"重新布局"。</div>
+    </div>
+  </aside>
+
+  <!-- ============ 中间: 图 ============ -->
+  <section id="stage">
+    <div class="toolbar">
+      <div class="coverage" id="coverage">—</div>
+      <div class="coverage" id="bundle-note" style="color:#1a7f5a;background:#e8f6f0;border-color:#b7e2d1"></div>
+      <input id="search" placeholder="搜索节点名…" data-en-placeholder="Search nodes…" autocomplete="off">
+      <div id="find-list"></div>
+    </div>
+    <div id="netwrap">
+      <div id="net"></div>
+      <div class="overlay" id="ovl"><div class="spin"></div><span id="ovl-text" data-en="Loading graph…">正在加载全图…</span></div>
+      <div class="legend" id="legend"></div>
+      <div id="toast"></div>
+      <!-- 边溯源卡 (2026-09-10): 点选任意边 → 该实体对的全部平行边 + 时间窗 + 原始事实 + 源新闻 -->
+      <div id="edgecard"></div>
+    </div>
+  </section>
+
+  <!-- ============ 右栏: 下钻 ============ -->
+  <aside id="drawer"></aside>
+</main>
+
+<!-- 渲染库本地优先: 投资人现场网络不保证, 赌 CDN 会白屏。 -->
+<script src="vendor/vis-network.min.js"></script>
+<script>
+if(typeof vis === 'undefined'){
+  document.write('<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"><\/script>');
+}
+</script>
+<script>
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const API = 'https://progeny-wad-overhaul.ngrok-free.dev/api/panorama';
+// The frontend is served by causals.org, while read-only graph data remains
+// behind ngrok. The custom header avoids ngrok's first-visit browser notice.
+// It triggers an OPTIONS preflight, answered only by the panorama CORS policy.
+function apiFetch(url, options = {}){
+  const destination = new URL(url, location.href);
+  if(destination.origin !== 'https://progeny-wad-overhaul.ngrok-free.dev' ||
+     !destination.pathname.startsWith('/api/panorama/')){
+    throw new Error('Unexpected graph API destination');
+  }
+  const headers = new Headers(options.headers || {});
+  headers.set('ngrok-skip-browser-warning', 'true');
+  return fetch(destination.toString(), {...options, headers, credentials: 'omit', mode: 'cors'});
+}
+const EN = new URLSearchParams(location.search).get('lang') !== 'zh';
+const L = (zh, en) => EN ? en : zh;
+if(EN){
+  document.documentElement.lang = 'en';
+  document.title = 'NewsGraph · Full Graph';
+  $$('[data-en]').forEach(el => { el.textContent = el.dataset.en; });
+  $$('[data-en-placeholder]').forEach(el => { el.placeholder = el.dataset.enPlaceholder; });
+}
+for(const [language, selector] of [['en','#lang-en'],['zh','#lang-zh']]){
+  const link = $(selector);
+  const url = new URL(location.href);
+  url.searchParams.set('lang', language);
+  link.href = url.toString();
+  link.classList.toggle('active', EN ? language === 'en' : language === 'zh');
+  if(link.classList.contains('active')) link.setAttribute('aria-current', 'true');
+}
+
+const fmt = n => (n ?? 0).toLocaleString('en-US');
+const pct = n => (n >= 10 ? n.toFixed(0) : n.toFixed(1)) + '%';
+
+// 用 var 而不是 let: 这几个要能被 scripts/_verify_panorama.py 从 window 上读到
+// (顶层的 let 不会挂到 window, 自动化验证拿不到)。
+var OV = null;          // overview 缓存
+var NET = null;         // vis.Network
+var NODE_DS = null, EDGE_DS = null;
+var ALL_NODES = [], ALL_EDGES = [];
+var HIDDEN_TYPES = new Set();
+
+// ---- 预计算数据包 (bundle) 模式 ----
+//
+// 部署拓扑: 服务器上的后端**没有 Neo4j**, 图谱数据全在本地。所以本地跑
+// scripts/build_panorama_bundle.py 把带坐标的数据包推给服务器, 服务器只托管。
+// 浏览器拿到坐标直接画, **零布局等待**。
+//
+// bundle 结构与实时接口的差异 (都是为了压体积):
+//   nodes: {id, l(标签), t(类型), d(度数), s(是否存疑)}   —— 字段名是短的
+//   edges: [i, j, relIdx, w]                              —— 下标, 不是 uuid
+//   tiers: {"30": [[x,y],...], "1500": [...]}             —— 每个档位一份坐标
+// 边只存 Top-3000 全量一份; 小档位的边是它的子集, 运行时按 i<N && j<N 过滤。
+var BUNDLE = null;      // 预计算数据包 (null = 走实时接口)
+var BUNDLE_TIER = 0;    // 当前档位 (0 = 最大档位)
+var BUNDLE_MAX = 0;     // bundle 里最大的档位
+var BUNDLE_ID_INDEX = new Map();   // uuid -> bundle 下标 (O(1) 查"这个点在不在池里")
+var RENDER_MS = 0;      // 最近一次 bundle 渲染耗时 (计数板展示用)
+var EXPAND_DEPTH = 2;   // 扫雷展开跳数 (seg-depth 可调, 1/2/3)
+
+// ---- bundle 模式动效参数 ("缓扩档", 2026-09-05 用户拍板) ----
+// 演进史 (三版, 每版都是实测教训):
+//   v1 全力度 (斥力-15000/限速42) → 抽风跳个没完 (vis 力场≠networkx 平衡态,
+//      整图持续搬家 + 3000 节点低帧率下单 tick 位移巨大)。
+//   v2 微风+呼吸定格 (10s 后 stopSimulation) → 收缩成一坨时定格, "像网卡了"
+//      —— centralGravity 0.03 在弱斥力下把全图往质心拉, 10 秒正卡在收缩中段。
+//   v3 缓扩档 (现方案): 不定格、慢慢扩、选中即局部散开。
+// 要点:
+//   - centralGravity 0.03→0.005: 收缩元凶, 降到只防散架、不再收拢。
+//   - avoidOverlap 0→0.4: 只对真实重叠的节点发力, 散开即自停 —— "慢慢扩"
+//     的主力 (预计算坐标在密集区必然重叠, 正好需要它)。
+//   - 斥力 -2500 + 限速 5 + timestep 0.15: 扩散可见但不疯。
+const PHYS_BREEZE = {enabled: true, solver: 'barnesHut',
+  barnesHut: {gravitationalConstant: -2500, centralGravity: 0.005,
+              springLength: 165, springConstant: 0.004, damping: 0.9,
+              avoidOverlap: 0.4},
+  stabilization: {enabled: false},   // ★ 不重跑布局, 从现成坐标起缓扩
+  timestep: 0.15, maxVelocity: 5, minVelocity: 0.75};
+
+// ---- 动效运行管理: 持续缓扩, 不定格 (2026-09-05) ----
+// "定格"设计被用户推翻 —— 图还在揉成一坨的时候停住, 给人网卡了的感觉。
+// 现在动效开 = 物理一直跑 (缓扩 + 呼吸感), 动效关 = 全停。
+// ★ setOptions({enabled:true}) 不会重启已停的 tick 循环, 必须显式
+//   startSimulation() (幂等, 已在跑时无副作用)。
+function ensurePhysics(){
+  if(!NET || !BUNDLE || !$('#chk-animate').checked) return;
+  NET.startSimulation();
+}
+
+// ---- 选中扩开: 点一个节点, 它的邻居被推开一圈, 看得清 (2026-09-05) ----
+// 与扫雷互补: 扫雷往画布**加**新点, 扩开把挤成一坨的**既有**点散开。
+// 做法: 找画布上的直接邻居, 距离 < SPREAD_MIN 的沿径向补间到 ≈springLength
+// (弹簧在此无净力, 推完不会被拉回), 350ms easeOut。物理继续跑, 补间主导位移。
+var SPREAD_MIN = 150;    // 距离小于此的邻居才推 (已经开的不动)
+var SPREAD_TO = 160;     // 推到这里 ≈ springLength(165), 略留余量防等距圆环
+var SPREAD_TWEEN = 350;  // 补间时长 ms
+var SPREAD_ANIM = null;
+function spreadNeighbors(uuid){
+  if(!NET || !NODE_DS) return;
+  if(SPREAD_ANIM){ cancelAnimationFrame(SPREAD_ANIM); SPREAD_ANIM = null; }
+  const pos = NET.getPositions();
+  const c = pos[uuid];
+  if(!c) return;
+  const nbs = new Set();
+  for(const e of ALL_EDGES){
+    if(e.src === uuid && pos[e.dst]) nbs.add(e.dst);
+    else if(e.dst === uuid && pos[e.src]) nbs.add(e.src);
+  }
+  const jobs = [];
+  nbs.forEach(id => {
+    if(id === uuid) return;
+    const p = pos[id];
+    const dx = p.x - c.x, dy = p.y - c.y;
+    const d = Math.hypot(dx, dy) || 1;
+    if(d >= SPREAD_MIN) return;
+    // 目标距离带一点按 id 的确定性抖动, 免得推出一个完美圆环 (假)
+    const to = SPREAD_TO + (id.charCodeAt(id.length - 1) % 5) * 7;
+    jobs.push({id, fx: p.x, fy: p.y,
+               tx: c.x + dx / d * to, ty: c.y + dy / d * to});
+  });
+  if(!jobs.length) return;
+  const t0 = performance.now();
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / SPREAD_TWEEN);
+    const e = 1 - Math.pow(1 - k, 3);   // easeOutCubic
+    NODE_DS.update(jobs.map(j => ({
+      id: j.id, x: j.fx + (j.tx - j.fx) * e, y: j.fy + (j.ty - j.fy) * e,
+    })));
+    if(k < 1) SPREAD_ANIM = requestAnimationFrame(step);
+    else SPREAD_ANIM = null;
+  };
+  SPREAD_ANIM = requestAnimationFrame(step);
+}
+
+// ---- 扫雷式探索 (additive expansion) ----
+//
+// 点击节点 → /api/panorama/expand 查本地 Neo4j → 邻居**追加**到画布:
+//   - 节点按 uuid 去重 (bundle 池里已有的不重复加)
+//   - 边按 (端点对, 关系名) 去重
+//   - 只加不减, 跨档位保留 —— 扫雷翻开的格子不收回去
+// 新节点围绕被点节点摆一圈 (黄金角撒点), 物理引擎开着时自然沉降。
+//
+// 服务器 (无图库) 上 expand/find 必然 503: NEO4J_OK 置 false 后不再尝试,
+// 搜索退回"只搜画布已加载节点"。别在这里假装能用。
+var NEO4J_OK = true;
+var EXTRA_NODES = [];    // 展开追加的节点 (bundle 之外; 用 var 挂 window 供回归脚本读)
+var EXTRA_EDGES = [];
+var EXTRA_SEQ = 0;       // extra 边自增 id
+var EXTRA_CAP = 1500;    // 探索上限: 3000 bundle + 1500 ≈ vis 能扛的边界, 到顶只提示不强加
+var EXPAND_CHAIN = Promise.resolve();   // 串行展开: 并发时 dedup 会算岔
+
+// 实体类型配色。实时接口下颜色由后端给 (n.color), 但 bundle 里为了压体积只存了
+// 类型字符串, 所以前端需要自己有一份。
+// ⚠ 必须与 api/routes/panorama.py 的 _SUBTYPE_COLORS 保持一致, 否则两种模式下
+//   同一个类型会是两个颜色。
+var TYPE_COLOR = {
+  'Person': '#e8734a', 'Company': '#4a90d9', 'Event': '#9b6bd6',
+  'Security': '#2fa88f', 'FinancialIndex': '#d9a94a', 'Commodity': '#c47ad6',
+  'Location': '#5cb85c', 'Organization': '#7a8fa6', 'EventClass': '#d9534f',
+  'Concept': '#8e7cc3', 'Infrastructure': '#b8860b', '(未分类)': '#9aa5b1',
+  // 2026-09-11 v2.6 文体·软件线
+  'CreativeWork': '#e05a8a', 'Software': '#20a4a4',
+};
+
+/* ---------- 概览 ---------- */
+async function loadOverview(){
+  const r = await apiFetch(`${API}/overview`);
+  if(!r.ok) throw new Error(`overview HTTP ${r.status}`);
+  renderOverview(await r.json());
+}
+
+// 取数与渲染分开: bundle 模式直接喂 bundle.overview, 复用同一套渲染逻辑,
+// 免得计数板在两种模式下长得不一样。
+function renderOverview(ov){
+  OV = ov;
+
+  const t = OV.totals, e = OV.edges_by_kind, ts = OV.time_span;
+  const span = ts.span_days != null ? `${ts.span_days} ${L('天', ts.span_days === 1 ? 'day' : 'days')}` : '—';
+  const oldest = ts.oldest ? ts.oldest.slice(0,10) : '—';
+  const newest = ts.newest ? ts.newest.slice(0,10) : '—';
+
+  $('#kpis').innerHTML = `
+    <div class="kpi"><b>${fmt(t.nodes)}</b><i>${L('节点','Nodes')}</i></div>
+    <div class="kpi"><b>${fmt(t.edges)}</b><i>${L('关系','Relationships')}</i></div>
+    <div class="kpi"><b>${fmt(t.entities)}</b><i>${L('实体','Entities')}</i></div>
+    <div class="kpi"><b>${fmt(t.news)}</b><i>${L('新闻','News')}</i></div>
+    <div class="kpi small"><b>${fmt(t.media_sources)}</b><i>${L('媒体来源','Media sources')}</i></div>
+    <div class="kpi small"><b>${span}</b><i>${oldest} → ${newest}</i></div>`;
+
+  // 实体构成
+  const max = Math.max(...OV.by_type.map(x => x.c));
+  $('#dist').innerHTML = OV.by_type.map(x => `
+    <div class="dist-row" data-t="${x.subtype}" title="${typeLabel(x.subtype)}: ${fmt(x.c)} (${pct(x.c/t.entities*100)})">
+      <i class="dist-dot" style="background:${x.color}"></i>
+      <span class="dist-name">${typeLabel(x.subtype)}</span>
+      <span class="dist-bar"><i style="width:${Math.max(1.5, x.c/max*100)}%;background:${x.color}"></i></span>
+      <span class="dist-num">${fmt(x.c)}</span>
+      <span class="dist-pct">${pct(x.c/t.entities*100)}</span>
+    </div>`).join('');
+  $$('#dist .dist-row').forEach(el => el.onclick = () => {
+    const t = el.dataset.t;
+    HIDDEN_TYPES.has(t) ? HIDDEN_TYPES.delete(t) : HIDDEN_TYPES.add(t);
+    el.classList.toggle('off');
+    applyTypeFilter();
+  });
+
+  // 关系类型 (by_rel 在早期版本的 bundle 里漏存过, 这里容错, 别因为一个可选
+  // 字段把整个计数板搞白屏)
+  const byRel = OV.by_rel || [];
+  $('#rels').innerHTML = Object.entries(e || {}).map(([k,v]) => `
+    <div class="rel-row"><span>${k}</span><b>${fmt(v)}</b></div>`).join('')
+    + (byRel.length ? `<div class="hint" style="margin-top:7px">${L('关系名','Relation names')} Top ${byRel.length}:</div>`
+       + byRel.slice(0,10).map(x => `
+      <div class="rel-row"><span>${x.rel}</span><b>${fmt(x.c)}</b></div>`).join('') : '');
+
+  // 图例
+  $('#legend').innerHTML = OV.by_type.map(x =>
+    `<div><i style="background:${x.color}"></i>${typeLabel(x.subtype)}</div>`).join('')
+    + `<div><i style="background:#c9ced6"></i>${L('新闻','News')}</div>`
+    + `<div title="${L('这个节点还有同名的兄弟节点 —— 靠类型标签区分（例如 Bitcoin 同时是 Commodity 和 FinancialIndex）。橙框只是提示，不代表错误。','Another node has the same name. Use type labels to distinguish them. The orange border is a notice, not an error.')}"><i style="background:#fff;box-shadow:inset 0 0 0 2.4px #e07b00"></i>${L('同名节点','Same-name node')}</div>`
+    + `<div title="${L('类型判定可疑或存疑的节点，红框提示，数据照实展示不做隐藏。','The node classification may be uncertain. A red border marks it; the record remains visible.')}"><i style="background:#fff;box-shadow:inset 0 0 0 2.4px #b3261e"></i>${L('存疑节点','Uncertain node')}</div>`;
+
+  $('#layer-hint').textContent = L(
+    '知识层: 只画实体之间的语义关系。新闻层会叠加新闻节点与“提到了”关系 (限量抽样)。',
+    'Knowledge: semantic links between entities. News: adds a limited sample of news mentions.');
+}
+
+/* ---------- 子图 ---------- */
+async function loadSubgraph(){
+  const layer = $('#seg-layer button.on').dataset.v;
+  const top_n = $('#sel-topn').value;
+  const news_edges = $('#sel-newscap').value;
+  const url = `${API}/subgraph?layer=${layer}&top_n=${top_n}&news_edges=${news_edges}`;
+
+  // 后端查图要 2 秒左右; 公网(ngrok ~280KB/s)再叠加传输时间。
+  // 所以分两段给反馈, 否则用户面对 10 秒静止的遮罩会以为死机。
+  ovl(true, L('正在从 28 万节点中取出核心子图 (后端查询中)…', 'Loading the core subgraph…'));
+  const t0 = performance.now();
+  const r = await apiFetch(url);
+  if(!r.ok) throw new Error(`subgraph HTTP ${r.status}`);
+
+  // 流式读取, 实时显示已收字节。
+  // 注意: 开了 gzip 后 Content-Length 是压缩后的大小, 而这里累积的是解压后的字节,
+  // 两者对不上, 所以只显示已接收量, 不显示分母。
+  const reader = r.body.getReader();
+  const chunks = [];
+  let got = 0, lastPaint = 0;
+  for(;;){
+    const {done, value} = await reader.read();
+    if(done) break;
+    chunks.push(value);
+    got += value.length;
+    const now = performance.now();
+    if(now - lastPaint > 120){          // 节流, 不然遮罩自己就成瓶颈
+      lastPaint = now;
+      ovl(true, L(`正在下载子图… 已接收 ${(got / 1048576).toFixed(1)} MB`, `Downloading subgraph… ${(got / 1048576).toFixed(1)} MB received`));
+    }
+  }
+  const buf = new Uint8Array(got);
+  let off = 0;
+  for(const c of chunks){ buf.set(c, off); off += c.length; }
+  const d = JSON.parse(new TextDecoder('utf-8').decode(buf));
+  const ms = Math.round(performance.now() - t0);
+
+  ALL_NODES = d.nodes; ALL_EDGES = d.edges;
+  render(d, ms);
+}
+
+function render(d, fetchMs){
+  const m = d.meta;
+
+  // 视觉映射: 节点大小按度数开方, 保证长尾仍可见
+  const maxDeg = Math.max(1, ...d.nodes.map(n => n.deg || 0));
+  const visNodes = d.nodes.map(n => ({
+    id: n.id,
+    label: n.label,
+    title: `${n.label}\n${L('类型','Type')}: ${typeText(n)}\n${L('度数','Degree')}: ${fmt(n.deg)}`
+           + (n.twins > 1 ? L(`\n⚠ 图上另有 ${n.twins - 1} 个同名节点（橙框标示）`, `\n⚠ ${n.twins - 1} other nodes share this name (orange border)`) : '')
+           + (n.suspicious ? L('\n⚠ 类型存疑: 名字像国家/地区/组织', '\n⚠ Uncertain type: name resembles a place or organization') : '')
+           + (n.kind === 'news' ? L('\n新闻节点', '\nNews node') : ''),
+    value: n.kind === 'news' ? 1 : Math.sqrt(n.deg / maxDeg) * 42 + 3,
+    color: n.kind === 'news'
+      ? {background:'#c9ced6', border:'#b3bac4'}
+      : {background: n.color, border: borderOf(n, shade(n.color, -18))},
+    borderWidth: n.kind === 'news' ? 1 : borderWidthOf(n),
+    shape: n.kind === 'news' ? 'dot' : 'dot',
+    font: {size: n.kind === 'news' ? 9 : Math.min(15, 9 + Math.sqrt(n.deg / maxDeg) * 7),
+           color:'#2c3542', strokeWidth: 2.4, strokeColor:'#ffffff'},
+    _raw: n,
+    // 存一份原始视觉属性, 类型过滤"取消"时能精确还原 (vis 的 update 不认 undefined)
+    _color0: n.kind === 'news'
+      ? {background:'#c9ced6', border:'#b3bac4'}
+      : {background: n.color, border: borderOf(n, shade(n.color, -18))},
+    _label0: n.label,
+    _deg: n.deg || 0,
+  }));
+
+  const visEdges = d.edges.map((e, i) => {
+    const props = edgeVisProps(e);
+    if(e.kind === 'mentions'){       // 提及边维持原有降权 (比 OTHER 更淡)
+      props.title = `${e.rel} (${e.w})`;
+      props.color = {color:'#dfe3e8', highlight:'#aab2bd', opacity:.42};
+      props.width = 0.5;
+      props.dashes = false;
+    }
+    return {
+      id: 'e' + i, from: e.src, to: e.dst,
+      ...props,
+      hidden: $('#chk-hideother') && $('#chk-hideother').checked && isOtherRel(e.rel),
+      _raw: e,
+    };
+  });
+
+  NODE_DS = new vis.DataSet(visNodes);
+  EDGE_DS = new vis.DataSet(visEdges);
+
+  // 边数上万时降级: dynamic 平滑每帧都要重算贝塞尔控制点, 是最大的单项开销。
+  const heavy = d.edges.length > 8000;
+
+  const opts = {
+    physics: {
+      solver: 'barnesHut',
+      // 参数按 graph_explorer.html 的经验值对齐 —— 之前 springConstant 0.045 硬了
+      // 2.25 倍、centralGravity 0.22 高了 47%, 结果 1500 个节点被拉成"中间一坨"。
+      // 这里弹簧放软、向心调弱、互斥加强, 让长尾真正舒展出去。
+      barnesHut: {gravitationalConstant: -15000, centralGravity: 0.06,
+                  springLength: 165, springConstant: 0.02, damping: 0.5,
+                  avoidOverlap: 0.28},
+      // updateInterval 调小是为了让画面持续重绘 —— 静止十几秒的画布看起来就是死机,
+      // 动起来就不是。iterations 给够, 否则布局没跑完就锁死, 节点还挤在一起。
+      stabilization: {enabled: true, iterations: 250, updateInterval: 12, fit: true},
+      maxVelocity: 42, minVelocity: 0.6,
+    },
+    interaction: {hover: true, tooltipDelay: 180, navigationButtons: false,
+                  keyboard: false, multiselect: false,
+                  // 拖拽时临时隐藏边, 避免几万条边跟着重绘
+                  hideEdgesOnDrag: heavy, hideEdgesOnZoom: false},
+    nodes: {shadow: false},
+    edges: {shadow: false, smooth: heavy ? false : {enabled: true, type: 'dynamic', roundness: 0.5},
+            selectionWidth: 0, hoverWidth: 0},
+  };
+
+  if(NET) NET.destroy();
+  NET = new vis.Network($('#net'), {nodes: NODE_DS, edges: EDGE_DS}, opts);
+  // 关键: vis 初始化时 canvas 尺寸可能受 flex 容器影响算错, 这里强制按 #net 当前
+  // CSS 尺寸重设一次。否则在某些 viewport 下画布位置/大小异常, 看起来"图没渲染"。
+  NET.setSize('100%', '100%');
+
+  // 力导向收敛后必须彻底关掉物理引擎。
+  // 原写法是 physics:{enabled:true} —— 意味着 27k 条边每帧持续重算 + 逐帧描边,
+  // 页面直接卡成 PPT 甚至无响应。这才是"看不到图/卡死"的主因。
+  NET.on('click', ev => {
+    if(ev.nodes.length) openNode(ev.nodes[0]);
+    else closeDrawer();
+  });
+  armLayout();
+
+  $('#coverage').innerHTML =
+    `${L('当前渲染','Showing')} <b>${fmt(m.nodes_shown)}</b> ${L('节点',m.nodes_shown === 1 ? 'node' : 'nodes')} / <b>${fmt(m.edges_shown)}</b> ${L('边',m.edges_shown === 1 ? 'edge' : 'edges')}`
+    + ` <em>(${L('全图的','of full graph')} ${m.coverage.nodes_pct}% / ${m.coverage.edges_pct}%)</em>`
+    + `　${L('取样: 度数','Sample: degree')} Top ${fmt(m.top_n)}`
+    + `　${L('后端','server')} ${m.elapsed_ms}ms / ${L('传输','transfer')} ${fetchMs}ms`;
+
+  applyTypeFilter();
+  applyEdgeVisibility();
+}
+
+/* ---------- 布局收尾: 停物理引擎 + 解锁 UI ---------- */
+let _layoutTimer = null;
+
+function armLayout(){
+  if(!NET) return;
+  clearTimeout(_layoutTimer);
+  // 兜底: vis 的 stabilizationIterationsDone 不保证触发 —— 布局已经收敛时会被跳过。
+  // UI 的可用性不能押在一个可能不来的事件上, 所以加硬超时, 无论如何都收尾。
+  _layoutTimer = setTimeout(finishLayout, 20000);
+
+  ovl(true, L('力导向布局中…', 'Laying out the graph…'), true);
+  NET.off('stabilizationProgress');
+  NET.on('stabilizationProgress', p => {
+    ovl(true, L(`力导向布局中… ${p.iterations} / ${p.total}`, `Laying out the graph… ${p.iterations} / ${p.total}`), true);
+  });
+  NET.once('stabilizationIterationsDone', finishLayout);
+}
+
+// 幂等: 事件和超时都调它, 重复执行无害
+function finishLayout(){
+  clearTimeout(_layoutTimer);
+  if(!NET) return;
+  // 关键: progress 监听必须摘掉, 否则硬超时先把 ovl 关了, 后续 progress 事件会
+  // 再次把它打开, 出现"幽灵遮罩"——回归里稳定 0.5~2s 后遮罩又冒出来。
+  NET.off('stabilizationProgress');
+  // 收尾后物理状态跟着开关走: bundle 模式勾着动效时应回到"微调呼吸"而不是硬关
+  // (硬关了开关还勾着 = UI 欺骗, 这个坑之前踩过一次)。实时接口模式维持原行为。
+  if(BUNDLE) applyPhysicsMode();
+  else NET.setOptions({physics: false});
+  NET.fit();
+  ovl(false);
+}
+
+/* ============================================================================
+ * 预计算数据包 (bundle) 模式 —— 秒开的核心
+ *
+ * 实时接口模式要 浏览器跑 13 秒力导向; bundle 模式坐标是本地算好的,
+ * 浏览器只负责画。这就是为什么同一个页面在服务器上能秒开。
+ * ========================================================================== */
+
+async function loadBundle(){
+  const r = await apiFetch(`${API}/bundle`);
+  if(r.status === 404) return null;          // 服务器还没收到过推送 -> 回退实时接口
+  if(!r.ok) throw new Error(`bundle HTTP ${r.status}`);
+  return await r.json();
+}
+
+// bundle 的字段名是短的 (压体积), 这里转成实时接口那套字段名,
+// 好让 applyTypeFilter / openNode 等既有逻辑两种模式都能跑。
+function bundleNode(n){
+  return {
+    id: n.id, label: n.l, subtype: n.t, deg: n.d,
+    // ★ 09-24：ts = 全部类型标签（别名节点如 Brent Crude Oil = FinancialIndex+Commodity）；
+    //   tw = 同名节点数（>1 说明图上仍有同名节点，用橙框+角标提示，避免「分不清商品还是资产」）
+    types: n.ts || [], twins: n.tw || 1,
+    suspicious: !!n.s, kind: 'entity',
+    color: TYPE_COLOR[n.t] || TYPE_COLOR['(未分类)'],
+  };
+}
+
+// 类型文本：优先显全部标签（`商品 · 指数`），没有则回退到单一 subtype
+function typeText(n){
+  const ts = (n && n.types && n.types.length) ? n.types : [n && n.subtype].filter(Boolean);
+  return ts.length ? ts.map(typeLabel).join(' · ') : L('(未分类)', '(Unclassified)');
+}
+
+function typeLabel(type){ return type === '(未分类)' ? L('(未分类)', '(Unclassified)') : type; }
+
+// 类型标签组（抽屉头部用，每种类型一个 chip，颜色跟图例一致）
+function typeTags(n){
+  const ts = (n && n.types && n.types.length) ? n.types : [n && n.subtype].filter(Boolean);
+  if(!ts.length) return `<span class="tag">${L('未分类','Unclassified')}</span>`;
+  return ts.map(t => `<span class="tag" style="background:${colorOf(t)}22;color:${colorOf(t)};border:1px solid ${colorOf(t)}55">${typeLabel(t)}</span>`).join('');
+}
+
+// 同名节点提示 chip（仅当图上还有同名节点时出现）
+function twinTag(n){
+  return (n && n.twins > 1)
+    ? `<span class="tag tw" title="${L(`图上还有 ${n.twins - 1} 个同名节点 —— 看类型标签区分`, `${n.twins - 1} other nodes share this name; compare their types`)}">${L('同名','Same name')} ×${n.twins}</span>`
+    : '';
+}
+
+// 节点边框：同名 > 存疑 > 常规（三者互斥，优先级高到低）
+function borderOf(n, fallback){
+  if(n.twins > 1) return '#e07b00';
+  if(n.suspicious) return '#b3261e';
+  return fallback;
+}
+function borderWidthOf(n){
+  return (n.twins > 1 || n.suspicious) ? 2.6 : 1;
+}
+
+function bundleEdgesFor(N){
+  // 边只存了最大档位一份, 这里按当前档位过滤出诱导子图的边。
+  // 42770 条边过滤一次 <10ms, 比再存 4 份边省几百 KB。
+  const out = [];
+  const src = BUNDLE.edges;
+  const efacts = BUNDLE.efacts || {};
+  for(let k = 0; k < src.length; k++){
+    const e = src[k];
+    if(e[0] < N && e[1] < N){
+      out.push({
+        id: 'e' + k,
+        src: BUNDLE.nodes[e[0]].id, dst: BUNDLE.nodes[e[1]].id,
+        rel: BUNDLE.rels[e[2]] || '', w: e[3], kind: 'semantic',
+        fact: efacts[k] || null,   // OTHER 边的叙事原文 (hover 用)
+      });
+    }
+  }
+  return out;
+}
+
+// ---- OTHER 叙事边降权 (2026-09-05) --------------------------------------
+// OTHER = 存储完备层的叙事关系, 不在传导闭集里。视觉原则: 传导边是主角,
+// 叙事边退到背景 (更淡/更细/虚线), hover 显示 fact 原文; Top30/100 默认隐藏。
+let OTHER_TOGGLED = false;   // 用户手动碰过开关后, 切档不再自动改默认值
+
+function escHtml(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function isOtherRel(rel){ return rel === 'OTHER'; }
+// 统一边样式: OTHER 降权, 其余照旧。title 供 vis tooltip (HTML)。
+function edgeVisProps(e){
+  if(isOtherRel(e.rel)){
+    const t = e.fact ? `OTHER · ${escHtml(e.fact)}` : `OTHER · ${L('叙事关系','narrative link')} (${e.w} ${L('条新闻提及','news mentions')})`;
+    return {
+      title: t,
+      color: {color:'#dfe4ea', highlight:'#9aa4b2', opacity:.30},
+      width: Math.min(1.3, 0.35 + Math.log2(e.w + 1) * 0.22),
+      dashes: [3, 6],
+    };
+  }
+  return {
+    title: `${e.rel} (${e.w})`,
+    color: {color:'#c3ccd6', highlight:'#2563eb', opacity:.72},
+    width: Math.min(3.2, 0.6 + Math.log2(e.w + 1) * 0.7),
+    dashes: false,
+  };
+}
+function otherHiddenDefault(tier){ return tier <= 100; }
+
+function renderFromBundle(tier){
+  const t0 = performance.now();
+  const N = Math.min(tier, BUNDLE.nodes.length);
+  const pos = BUNDLE.tiers[String(tier)];
+  if(!pos || pos.length !== N){
+    throw new Error(L(`档位 ${tier} 的坐标缺失或不匹配 (${pos ? pos.length : 0} vs ${N})`, `Missing or mismatched coordinates for tier ${tier} (${pos ? pos.length : 0} vs ${N})`));
+  }
+
+  const rawNodes = BUNDLE.nodes.slice(0, N).map(bundleNode);
+  const rawEdges = bundleEdgesFor(N);
+  // 已探索 (EXTRA) 的节点/边跨档位保留 —— 扫雷翻开的格子不因重渲染被收走
+  ALL_NODES = rawNodes.concat(EXTRA_NODES);
+  ALL_EDGES = rawEdges.concat(EXTRA_EDGES);
+  BUNDLE_TIER = tier;
+
+  const maxDeg = Math.max(1, ...rawNodes.map(n => n.deg || 0));
+  const THRESH = maxDeg * 0.06;
+
+  const visNodes = rawNodes.map((n, i) => ({
+    id: n.id,
+    label: n.deg >= THRESH ? n.label : '',
+    title: `${n.label}\n${L('类型','Type')}: ${typeText(n)}\n${L('度数','Degree')}: ${fmt(n.deg)}`
+           + (n.twins > 1 ? L(`\n⚠ 图上另有 ${n.twins - 1} 个同名节点（橙框标示）`, `\n⚠ ${n.twins - 1} other nodes share this name (orange border)`) : '')
+           + (n.suspicious ? L('\n⚠ 类型存疑: 名字像国家/地区/组织', '\n⚠ Uncertain type: name resembles a place or organization') : ''),
+    value: Math.sqrt(n.deg / maxDeg) * 42 + 3,
+    color: {background: n.color, border: borderOf(n, shade(n.color, -18))},
+    borderWidth: borderWidthOf(n),
+    shape: 'dot',
+    font: {size: Math.min(15, 9 + Math.sqrt(n.deg / maxDeg) * 7),
+           color:'#2c3542', strokeWidth: 2.4, strokeColor:'#ffffff'},
+    // ★ 预计算坐标。vis 在 physics 关闭时会直接用 x/y 画, 一帧都不用算布局。
+    x: pos[i][0], y: pos[i][1],
+    _raw: n,
+    _color0: {background: n.color, border: borderOf(n, shade(n.color, -18))},
+    _label0: n.label,
+    _deg: n.deg || 0,
+  }));
+
+  const visEdges = rawEdges.map(e => ({
+    id: e.id, from: e.src, to: e.dst,
+    ...edgeVisProps(e),
+    hidden: $('#chk-hideother').checked && isOtherRel(e.rel),
+    _raw: e,
+  }));
+
+  const heavy = visEdges.length > 8000;
+  const wantAnim = $('#chk-animate').checked;
+
+  const opts = {
+    // 坐标已经是本地算好的平衡态, 且尺度对齐了 springLength。
+    //  - 动效关: physics 全关 —— 直接画, 零计算
+    //  - 动效开: 微风档 (PHYS_BREEZE, 顶层常量) —— 从现成坐标缓慢游走,
+    //    速度自然衰减后冻结。参数与理由见定义处注释。
+    physics: wantAnim ? PHYS_BREEZE : {enabled: false},
+    interaction: {hover: true, tooltipDelay: 180, navigationButtons: false,
+                  keyboard: false, multiselect: false,
+                  hideEdgesOnDrag: heavy, hideEdgesOnZoom: false},
+    nodes: {shadow: false},
+    edges: {shadow: false, smooth: heavy ? false : {enabled: true, type: 'dynamic', roundness: 0.5},
+            selectionWidth: 0, hoverWidth: 0},
+  };
+
+  NODE_DS = new vis.DataSet(visNodes);
+  EDGE_DS = new vis.DataSet(visEdges);
+
+  if(NET) NET.destroy();
+  NET = new vis.Network($('#net'), {nodes: NODE_DS, edges: EDGE_DS}, opts);
+  NET.setSize('100%', '100%');   // vis 在 flex 容器里会算错尺寸, 强制重设
+  // 点击 = 开详情 + 扫雷式展开 (expandNode 内部自己判断开关/图库可用性)
+  // 点边 (没点中节点) → 溯源卡: 这对实体的全部平行边 + 时间窗 + 建边源新闻
+  // ⚠ 边选择逻辑只能挂 click: vis 的 selectEdges() 程序化调用不发 select 事件,
+  //   selectEdge 又只认指针交互 —— click 是唯一用户交互/程序化都覆盖的入口。
+  NET.on('click', ev => {
+    if(ev.nodes.length){ openNode(ev.nodes[0]); expandNode(ev.nodes[0]); }
+    else if(ev.edges && ev.edges.length === 1){ showEdgeCard(ev.edges[0]); }
+    else { closeDrawer(); hideEdgeCard(); }
+  });
+  // 拖完节点松手 → 确保物理在跑 (松手位置不是平衡位, 要让它继续沉降)
+  NET.on('dragEnd', () => ensurePhysics());
+
+  // 坐标已知, fit 是纯几何计算, 不需要等布局事件
+  NET.fit();
+  RENDER_MS = Math.round(performance.now() - t0);
+
+  updateCoverage();
+
+  applyTypeFilter();
+  applyEdgeVisibility();
+  applyPhysicsMode();
+}
+
+// 切档位: 坐标是预计算的, 所以只换坐标 + 切边的可见性, 不重建 network。
+// 这是 bundle 模式相对实时接口最大的体验优势 —— 切换是瞬时的, 不重新布局。
+function applyTier(tier){
+  if(!BUNDLE || !NET) return;
+  const N = Math.min(tier, BUNDLE.nodes.length);
+  const pos = BUNDLE.tiers[String(tier)];
+  if(!pos) return;
+  BUNDLE_TIER = tier;
+  // OTHER 隐藏开关: Top30/100 默认隐藏, 300+ 默认显示; 用户手动碰过就不再自动改
+  if(!OTHER_TOGGLED) $('#chk-hideother').checked = otherHiddenDefault(tier);
+
+  const maxDeg = Math.max(1, ...ALL_NODES.map(n => n.deg || 0));
+  const THRESH = maxDeg * 0.06;
+  const showAll = $('#chk-labels').checked;
+
+  // 节点: 前 N 个显示并换到该档位的坐标, 其余隐藏
+  const upd = [];
+  const nodes = BUNDLE.nodes;
+  for(let i = 0; i < nodes.length; i++){
+    if(i < N){
+      upd.push({id: nodes[i].id, hidden: false, x: pos[i][0], y: pos[i][1],
+                label: (showAll || (nodes[i].d || 0) >= THRESH) ? nodes[i].l : ''});
+    }else{
+      upd.push({id: nodes[i].id, hidden: true});
+    }
+  }
+  NODE_DS.update(upd);
+
+  // 边: 两端都在档位内才显示; OTHER 叙事边按开关隐藏
+  const hideOther = $('#chk-hideother').checked;
+  const eupd = [];
+  const src = BUNDLE.edges;
+  for(let k = 0; k < src.length; k++){
+    const inTier = src[k][0] < N && src[k][1] < N;
+    eupd.push({id: 'e' + k,
+               hidden: !inTier || (hideOther && BUNDLE.rels[src[k][2]] === 'OTHER')});
+  }
+  EDGE_DS.update(eupd);
+
+  // 已探索的节点跨档位保持可见 —— 扫雷翻开的格子不会因为切档位被收走。
+  // (extra 边的 bundle 端点若在低档位被隐藏, vis 自动不画那条边, 切回大档位又会出现)
+  if(EXTRA_NODES.length){
+    NODE_DS.update(EXTRA_NODES.map(n => ({id: n.id, hidden: false})));
+  }
+
+  ALL_NODES = nodes.slice(0, N).map(bundleNode).concat(EXTRA_NODES);
+  const Esrc = src.filter(e => e[0] < N && e[1] < N);
+  ALL_EDGES = Esrc.map((e, i) => ({id: 'e'+i, src: nodes[e[0]].id, dst: nodes[e[1]].id,
+                                   rel: BUNDLE.rels[e[2]] || '', w: e[3], kind: 'semantic'}))
+                  .concat(EXTRA_EDGES);
+
+  NET.fit();
+  updateCoverage();
+  applyPhysicsMode();
+}
+
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255]
+    .map(v => Math.max(0, Math.min(255, v + amt)));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function applyTypeFilter(){
+  if(!NODE_DS) return;
+  NODE_DS.update(NODE_DS.get().map(n => {
+    const off = HIDDEN_TYPES.has(n._raw.subtype);
+    return off
+      ? {id: n.id, opacity: 0.12, color: {background:'#e8eaed', border:'#e0e3e7'},
+         font: {color:'#c2c8d0', strokeColor:'#ffffff'}}
+      : {id: n.id, opacity: 1, color: n._color0,
+         font: {color:'#2c3542', strokeColor:'#ffffff'}};
+  }));
+}
+
+function applyEdgeVisibility(){
+  if(!EDGE_DS) return;
+  // bundle 模式下 hidden 有三个来源: ① chk-hideedges 全隐藏 ② 档位外 ③ OTHER 开关。
+  // ⚠ 旧版只按 ① 计算, 切"隐藏连线"会把档位外的边一并放出来 (潜伏 bug), 这里一并修掉。
+  const hideAll = $('#chk-hideedges').checked;
+  const hideOther = $('#chk-hideother').checked;
+  const N = BUNDLE ? Math.min(BUNDLE_TIER || BUNDLE_MAX, BUNDLE.nodes.length) : Infinity;
+  EDGE_DS.update(EDGE_DS.get().map(e => {
+    let hidden = hideAll;
+    if(!hidden && BUNDLE && typeof e.id === 'string' && e.id[0] === 'e'){
+      const k = +e.id.slice(1);
+      const be = BUNDLE.edges[k];          // bundle 边 id 形如 'e123'; 展开边是 'x…'
+      if(be) hidden = !(be[0] < N && be[1] < N);
+    }
+    if(!hidden && hideOther && e._raw) hidden = isOtherRel(e._raw.rel);
+    return {id: e.id, hidden};
+  }));
+  // 标签: 默认只显示高度数节点的 (全开会糊成一片), 关掉后要能回到阈值状态
+  // 但若当前处于"聚焦 Top N"模式, 标签全开优先于度数阈值
+  const showAll = $('#chk-labels').checked;
+  // bundle 模式下 sel-focus 存的是**档位** (切档位由 applyTier 管), 这里必须当 0,
+  // 否则会按度数截 Top-N、把已探索节点 hidden 掉。聚焦逻辑只属于实时接口模式。
+  const focused = BUNDLE ? 0 : (parseInt($('#sel-focus').value, 10) || 0);
+  const maxDeg = Math.max(1, ...ALL_NODES.map(n => n.deg || 0));
+  const THRESH = maxDeg * 0.06;
+  if(focused > 0){
+    // 聚焦时按度数前 N 设 hidden + 全开标签
+    const sorted = [...NODE_DS.get()].sort((a,b) => (b._deg||0) - (a._deg||0));
+    const topIds = new Set(sorted.slice(0, focused).map(n => n.id));
+    NODE_DS.update(NODE_DS.get().map(n => ({
+      id: n.id, hidden: !topIds.has(n.id), label: n._label0,
+    })));
+  } else {
+    NODE_DS.update(NODE_DS.get().map(n => ({
+      id: n.id,
+      // 已探索节点永远带标签 —— 它们是用户主动翻开的, 数量有限不会糊成一片
+      label: (showAll || n._extra || n._deg >= THRESH) ? n._label0 : '',
+    })));
+  }
+}
+
+// 动效开关: 物理引擎持续运行 = 节点缓慢飘动 = 演示时有"科技感"。
+//
+// ⚠ 这里踩过一个坑, 值得记下来: 之前的版本在节点数超过 ANIM_NODE_CAP 时
+// **静默**把物理关掉, 但复选框仍然是勾上的 —— 用户勾了开关, 图纹丝不动,
+// 完全不知道为什么。开关状态和实际行为不一致是 UI 欺骗, 比不做这个功能更糟。
+//
+// 现在的做法: 开关勾了就一定真的开物理, 性能代价**明确写出来**让用户自己权衡,
+// 而不是替他偷偷关掉。实测全图 1500 节点开物理约 14.5 FPS (会顿挫但能动),
+// 300 节点以内满帧。
+function applyPhysicsMode(){
+  if(!NET) return;
+  const want = $('#chk-animate').checked;
+  const N = BUNDLE ? Math.min(BUNDLE_TIER || BUNDLE_MAX, BUNDLE.nodes.length)
+                   : (parseInt($('#sel-focus').value, 10) || 0);
+  const nodeCount = BUNDLE ? N : NODE_DS.get().filter(n => !n.hidden).length;
+
+  if(BUNDLE){
+    // bundle 模式: 缓扩档, 持续运行不定格 (PHYS_BREEZE / ensurePhysics 顶层)。
+    // ★ setOptions(enabled:true) 不会重启已停的 tick 循环 —— 必须显式
+    //   startSimulation() (ensurePhysics 里做, 实验证过: 定格后 setOptions 无动作)。
+    NET.setOptions({physics: want ? PHYS_BREEZE : {enabled: false}});
+    if(want) ensurePhysics(); else NET.stopSimulation();
+  }else{
+    NET.setOptions({physics: want});
+  }
+
+  const hint = $('#anim-hint');
+  if(hint){
+    if(!want){
+      hint.textContent = '';
+    }else if(BUNDLE){
+      hint.textContent = L('缓扩动效: 图在缓慢舒展, 拥挤处自动散开; 点击节点会把它的邻居推开一圈。嫌吵关掉即全停。',
+        'Gentle animation spreads crowded nodes. Clicking a node pushes its neighbors outward; turn this off to stop motion.');
+    }else if(nodeCount > 1000){
+      hint.textContent = L(`动效运行中 (${fmt(nodeCount)} 节点 / ${fmt(ALL_EDGES.length)} 边) —— 节点较多, 实测约 14 FPS, 会有顿挫。切到 Top 300 以内可满帧。`,
+        `Animation active (${fmt(nodeCount)} nodes / ${fmt(ALL_EDGES.length)} edges). Large views may be choppy; try Top 300.`);
+    }else{
+      hint.textContent = L(`动效运行中 (${fmt(nodeCount)} 个节点在实时力导向)`, `Animation active (${fmt(nodeCount)} nodes in live layout)`);
+    }
+  }
+}
+
+// 独立聚焦函数: 按度数排序, 只显示前 N 节点, 自动 fit
+function applyFocus(){
+  if(!NET || !NODE_DS) return;
+  const N = parseInt($('#sel-focus').value, 10) || 0;
+  if(N === 0){
+    // 全图: 解 hidden + 按度数阈值恢复标签 (复刻 render 里的策略)
+    const maxDeg = Math.max(1, ...NODE_DS.get().map(n => n._deg || 0));
+    const THRESH = maxDeg * 0.06;
+    NODE_DS.update(NODE_DS.get().map(n => ({
+      id: n.id, hidden: false,
+      label: $('#chk-labels').checked || n._deg >= THRESH ? n._label0 : '',
+    })));
+    NET.fit();
+  } else {
+    const sorted = [...NODE_DS.get()].sort((a,b) => (b._deg||0) - (a._deg||0));
+    const topIds = new Set(sorted.slice(0, N).map(n => n.id));
+    NODE_DS.update(NODE_DS.get().map(n => ({
+      id: n.id, hidden: !topIds.has(n.id), label: n._label0,
+    })));
+    NET.fit({nodes: [...topIds]});
+  }
+  applyPhysicsMode();
+}
+
+/* ---------- 下钻 ---------- */
+
+// 类型取色。实时接口下后端给 colors 字典, bundle 模式下用前端这份。
+function colorOf(t){
+  return (OV && OV.colors && OV.colors[t]) || TYPE_COLOR[t] || '#9aa5b1';
+}
+
+// 画布上任意节点的邻域 (bundle 边 + 已探索边), 给抽屉用。
+// 之前只扫 BUNDLE.edges —— 展开功能上线后 EXTRA_EDGES 里也有它的新边, 漏扫就不完整。
+function loadedNeighborsOf(uuid){
+  const byId = new Map(ALL_NODES.map(n => [n.id, n]));
+  const nb = [];
+  for(const e of ALL_EDGES){
+    let other = null, dir = '';
+    if(e.src === uuid){ other = e.dst; dir = '→'; }
+    else if(e.dst === uuid){ other = e.src; dir = '←'; }
+    else continue;
+    const on = byId.get(other);
+    if(!on) continue;
+    nb.push({uuid: on.id, name: on.label, subtype: on.subtype, deg: on.deg,
+             suspicious: on.suspicious, rel: e.rel, w: e.w, direction: dir});
+  }
+  nb.sort((a, b) => b.w - a.w);
+  return nb;
+}
+
+// bundle 模式的下钻: 抽屉数据**前端现场算** (服务器没有 Neo4j, /neighbors 在那边不可用;
+// 边已在内存里, 过滤一遍比发请求还快)。展开追加的 EXTRA 节点同样能开抽屉。
+function openNodeFromBundle(uuid){
+  const el = $('#drawer');
+  const idx = BUNDLE.nodes.findIndex(n => n.id === uuid);
+  const ex = idx < 0 ? EXTRA_NODES.find(n => n.id === uuid) : null;
+  if(idx < 0 && !ex){
+    el.innerHTML = `<div class="dr-head"><span class="close">×</span>
+      <div class="dr-title">${L('节点不在画布上','Node not in view')}</div>
+      <div class="dr-sub">${L('它不在数据包采样里, 也没被展开过。本地图库可用时, 搜索框能把它加载上来。','This node is outside the sampled bundle and has not been expanded. Search can load it when the local graph is available.')}</div></div>`;
+    el.querySelector('.close').onclick = closeDrawer;
+    return;
+  }
+  const name = idx >= 0 ? BUNDLE.nodes[idx].l : ex.label;
+  const subtype = idx >= 0 ? BUNDLE.nodes[idx].t : ex.subtype;
+  // ★ 09-24：types = 全部类型标签（如 ['FinancialIndex','Commodity']）；twins = 同名节点数
+  const types = idx >= 0 ? (BUNDLE.nodes[idx].ts || []) : (ex.types || []);
+  const twins = idx >= 0 ? (BUNDLE.nodes[idx].tw || 1) : (ex.twins || 1);
+  const sus = idx >= 0 ? BUNDLE.nodes[idx].s : ex.suspicious;
+
+  const nb = loadedNeighborsOf(uuid);
+  const top = nb.slice(0, 80);
+
+  const susTag = sus ? `<span class="tag sus">${L('类型存疑','Uncertain type')}</span>` : '';
+  const exTag = ex ? `<span class="tag" style="background:#e8f6f0;color:#1a7f5a">${L('已探索','Explored')}</span>` : '';
+  const nbHtml = top.length
+    ? top.map(n => `
+        <div class="nb" data-u="${n.uuid}">
+          <i style="background:${colorOf(n.subtype)}"></i>
+          <span class="ar">${n.direction}</span>
+          <span class="rel">${n.rel}</span>
+          <span class="nm">${n.name || L('(无名)','(Unnamed)')}</span>
+          ${n.suspicious ? '<span class="tag sus">!</span>' : ''}
+        </div>`).join('')
+    : `<div class="empty">${L('当前画布上没有它的连边','No visible links on this canvas')}${NEO4J_OK ? L(' — 点击节点可从图库展开邻域',' — click to expand neighbors from the graph') : ''}</div>`;
+
+  el.innerHTML = `
+    <div class="dr-head">
+      <span class="close">×</span>
+      <div class="dr-title">${name}</div>
+      <div class="dr-sub">${susTag}${typeTags({types: types, subtype: subtype})}${twinTag({twins: twins})}${exTag}</div>
+    </div>
+    <div class="dr-body">
+      <h4>${L('邻域','Neighbors')} · ${fmt(nb.length)}${nb.length > top.length ? '+' : ''}</h4>
+      ${nbHtml}
+      <h4>${L('支撑新闻','Supporting news')}</h4>
+      <div class="empty">${L('当前数据包只含知识层 (实体关系), 不含新闻层。需要支撑新闻时用 scripts/build_panorama_bundle.py 带上新闻层重建。','This bundle contains entity relationships only, not the news layer. Rebuild it with news to show supporting articles.')}</div>
+    </div>`;
+  document.querySelector('main').classList.add('drawer-open');
+  el.querySelector('.close').onclick = closeDrawer;
+  // 抽屉里的邻点点击 = 和画布点击同一行为: 开详情 + 扫雷式展开
+  el.querySelectorAll('.nb').forEach(x => x.onclick = () => pickNode(x.dataset.u));
+  // 图库可用时异步富化 (时间标 + fact + 最新动态 + 支撑新闻), 失败保持简洁版
+  if(NEO4J_OK) enrichDrawer(uuid);
+}
+
+/* ============================================================================
+ * drawer 富化 + 边溯源 (2026-09-10, 用户三个问题: 矛盾边时间 / 最新态度 /
+ * 建边来源)。数据全在边属性里 (valid_at/fact/episodes), 只是 viewer 一直没暴露。
+ * 图库可用时异步增强 (失败静默降级为本地简洁版), 服务器模式不受影响。
+ * ========================================================================== */
+var DRAWER_SEQ = 0;
+
+function fmtDay(iso){
+  if(!iso || iso === 'None') return '';
+  const m = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[2]}-${m[3]}` : '';
+}
+function fmtSpan(v, iv){
+  const a = fmtDay(v), b = fmtDay(iv);
+  return a ? (b ? `${a} → ${b}` : L(`${a} 起`, `since ${a}`)) : '';
+}
+function esc(s){ return String(s == null ? '' : s).replace(/</g, '&lt;'); }
+
+// 实体对溯源面板 (drawer ⓘ 展开 与 #edgecard 共用)
+function pairBlockHtml(d){
+  return `<div class="pair-block">`
+    + d.edges.map(e => `
+      <div class="pe">
+        <div class="h">
+          <span class="rl">${esc(e.rel)}</span>
+          <span class="wd">${fmtSpan(e.valid_at, e.invalid_at)}</span>
+          <span class="wd">${e.episodes ? e.episodes.length : 0} ${L('篇源新闻','source articles')}</span>
+        </div>
+        <div class="ft">${esc(e.fact) || L('(无边属性 fact)','(No relation fact)')}</div>
+        ${(e.news || []).map(n => `
+          <div class="nw">
+            <div class="m">${esc(n.media)} · ${String(n.created_at || '').slice(0, 10)}</div>
+            ${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener"
+              style="font-size:11px">${esc(n.url.slice(0, 60))}…</a>` : ''}
+          </div>`).join('')}
+      </div>`).join('')
+    + `</div>`;
+}
+
+// 点邻点行的 ⓘ → 懒加载这对实体的全部边 + 溯源
+function togglePairBlock(btn, uuid){
+  const row = btn.closest('.nb');
+  const existing = row.nextElementSibling;
+  if(existing && existing.classList.contains('pair-block')){
+    existing.remove(); return;
+  }
+  btn.textContent = '…';
+  const other = row.dataset.u;
+  apiFetch(`${API}/pair-edges?src=${encodeURIComponent(uuid)}&dst=${encodeURIComponent(other)}`)
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => {
+      const div = document.createElement('div');
+      div.innerHTML = pairBlockHtml(d);
+      const block = div.firstChild;
+      row.after(block);
+      btn.textContent = 'ⓘ';
+    })
+    .catch(() => { btn.textContent = 'ⓘ'; toast(L('溯源不可用 (需要本地图库)','Provenance unavailable (local graph required)')); });
+}
+
+// drawer 富化: 图库可用时拉 /neighbors 重画 (时间标 + fact + 最新动态 + 支撑新闻)
+async function enrichDrawer(uuid){
+  const seq = ++DRAWER_SEQ;
+  try{
+    const r = await apiFetch(`${API}/neighbors?uuid=${encodeURIComponent(uuid)}&limit=80`);
+    if(!r.ok) return;                    // 503 等: 静默保持本地简洁版
+    const d = await r.json();
+    if(seq !== DRAWER_SEQ) return;       // 抽屉已切到别的节点
+    if(!$('#drawer .nb') && !d.neighbors.length) return;
+
+    const c = d.center;
+    const latest = d.latest_edge ? `
+      <div class="latest">
+        <b>${L('最新动态','Latest activity')}</b>: ${esc(d.latest_edge.rel)} —
+        ${esc(d.latest_edge.dst_name)} · ${fmtDay(d.latest_edge.at)}
+        <div class="ft">${esc(d.latest_edge.fact)}</div>
+      </div>` : '';
+    const nbHtml = d.neighbors.map(n => `
+      <div class="nb" data-u="${n.uuid}" title="${esc(n.fact) || esc(n.rel)}">
+        <i style="background:${colorOf(n.subtype)}"></i>
+        <span class="ar">${n.direction === 'out' ? '→' : '←'}</span>
+        <span class="rel">${esc(n.rel)}</span>
+        <span class="nm">${esc(n.name) || L('(无名)','(Unnamed)')}</span>
+        <span class="tm">${fmtDay(n.valid_at)}</span>
+        <span class="src" title="${L('溯源: 这条边是哪条新闻建的','Provenance: which article created this link')}">ⓘ</span>
+      </div>`).join('');
+    const newsHtml = d.supporting_news.length
+      ? d.supporting_news.map(n => `
+        <div class="news">
+          <div class="m"><b>${esc(n.media)}</b><span>${String(n.created_at || '').slice(0, 10)}</span></div>
+          <div class="x">${esc(n.excerpt)}…</div>
+        </div>`).join('')
+      : `<div class="empty">${L('没有被新闻直接提及','No direct news mentions')}</div>`;
+
+    const body = $('#drawer .dr-body');
+    if(!body) return;
+    body.innerHTML = `
+      ${latest}
+      <h4>${L('邻域','Neighbors')} · ${fmt(d.meta.neighbor_count)}${d.meta.truncated ? '+' : ''} · ${L('按时间倒序','newest first')}</h4>
+      ${nbHtml}
+      <h4>${L('支撑新闻','Supporting news')} · ${fmt(d.meta.news_count)}</h4>
+      ${newsHtml}`;
+    body.querySelectorAll('.nb').forEach(x => x.onclick = ev => {
+      if(ev.target.classList.contains('src')){
+        ev.stopPropagation();
+        togglePairBlock(ev.target, uuid);
+      }else{
+        pickNode(x.dataset.u);
+      }
+    });
+  }catch(e){ /* 静默: drawer 保持本地简洁版 */ }
+}
+
+// 边溯源卡: 点选画布上任意边 → 该实体对全部平行边 + 时间窗 + 源新闻
+var EDGE_CARD_UUIDS = null;
+async function showEdgeCard(edgeId){
+  if(!NEO4J_OK) return;
+  const e = EDGE_DS.get(edgeId);
+  if(!e || !e.from || !e.to) return;
+  const card = $('#edgecard');
+  card.innerHTML = `<div class="ec-title">${L('边溯源','Link provenance')}</div>
+    <div class="ec-sub">${L('加载中…','Loading…')}</div>`;
+  card.classList.add('on');
+  try{
+    const r = await apiFetch(`${API}/pair-edges?src=${encodeURIComponent(e.from)}&dst=${encodeURIComponent(e.to)}`);
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    EDGE_CARD_UUIDS = [e.from, e.to];
+    card.innerHTML = `
+      <div class="ec-title">${esc(d.pair.src_name)} ⇄ ${esc(d.pair.dst_name)}</div>
+      <div class="ec-sub">${d.meta.edge_count} ${L('条平行边','parallel links')}
+        ${Object.entries(d.meta.by_rel).map(([k, v]) => `${esc(k)}×${v}`).join(' · ')}
+        　<span class="src" id="ec-open" style="cursor:pointer;color:#2563eb">${L('在抽屉打开 ↗','Open in drawer ↗')}</span></div>
+      ${pairBlockHtml(d)}`;
+    const openBtn = card.querySelector('#ec-open');
+    if(openBtn) openBtn.onclick = () => pickNode(e.from);
+  }catch(err){
+    card.innerHTML = `<div class="ec-title">${L('边溯源','Link provenance')}</div>
+      <div class="ec-sub">${L('不可用 (需要本地图库)','Unavailable (local graph required)')}: ${esc(err.message)}</div>`;
+  }
+}
+function hideEdgeCard(){
+  const card = $('#edgecard');
+  if(card) card.classList.remove('on');
+}
+
+async function openNode(uuid){
+  // 选中即扩开: 把挤在这节点身边的邻居推开一圈 (用户 2026-09-05 需求:
+  // "选中的点扩开能看清它的邻居")。抽屉打开与扩开同时发生。
+  spreadNeighbors(uuid);
+  if(BUNDLE) return openNodeFromBundle(uuid);
+  const el = $('#drawer');
+  const node = ALL_NODES.find(n => n.id === uuid);
+  el.innerHTML = `<div class="dr-head"><span class="close">×</span>
+      <div class="dr-title">${node ? node.label : uuid.slice(0,8)}</div>
+      <div class="dr-sub">${L('加载邻域…','Loading neighbors…')}</div></div>`;
+  document.querySelector('main').classList.add('drawer-open');
+  el.querySelector('.close').onclick = closeDrawer;
+
+  let d;
+  try{
+    const r = await apiFetch(`${API}/neighbors?uuid=${encodeURIComponent(uuid)}&limit=80`);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    d = await r.json();
+  }catch(err){
+    el.innerHTML = `<div class="dr-head"><span class="close">×</span>
+      <div class="dr-title">${L('加载失败','Loading failed')}</div><div class="dr-sub">${err.message}</div></div>`;
+    el.querySelector('.close').onclick = closeDrawer;
+    return;
+  }
+
+  const c = d.center;
+  const susTag = c.suspicious
+    ? `<span class="tag sus">${L('类型存疑','Uncertain type')}</span>` : '';
+
+  const nbHtml = d.neighbors.length
+    ? d.neighbors.map(n => `
+        <div class="nb" data-u="${n.uuid}">
+          <i style="background:${n.color}"></i>
+          <span class="ar">${n.direction === 'out' ? '→' : '←'}</span>
+          <span class="rel">${n.rel}</span>
+          <span class="nm">${n.name || L('(无名)','(Unnamed)')}</span>
+          ${n.suspicious ? '<span class="tag sus">!</span>' : ''}
+        </div>`).join('')
+    : `<div class="empty">${L('没有 RELATES_TO 邻边','No RELATES_TO neighbors')}</div>`;
+
+  const newsHtml = d.supporting_news.length
+    ? d.supporting_news.map(n => `
+        <div class="news">
+          <div class="m"><b>${n.media}</b><span>${(n.created_at||'').slice(0,10)}</span></div>
+          <div class="x">${n.excerpt ? n.excerpt.replace(/</g,'&lt;') + '…' : ''}</div>
+        </div>`).join('')
+    : `<div class="empty">${L('没有被新闻直接提及','No direct news mentions')}</div>`;
+
+  el.innerHTML = `
+    <div class="dr-head">
+      <span class="close">×</span>
+      <div class="dr-title">${c.name}</div>
+      <div class="dr-sub">${susTag}${typeTags(c)}${twinTag(c)}</div>
+    </div>
+    <div class="dr-body">
+      <h4>${L('邻域','Neighbors')} · ${fmt(d.meta.neighbor_count)}${d.meta.truncated ? '+' : ''}</h4>
+      ${nbHtml}
+      <h4>${L('支撑新闻','Supporting news')} · ${fmt(d.meta.news_count)}</h4>
+      ${newsHtml}
+    </div>`;
+  el.querySelector('.close').onclick = closeDrawer;
+  el.querySelectorAll('.nb').forEach(x => x.onclick = () => openNode(x.dataset.u));
+}
+
+function closeDrawer(){
+  document.querySelector('main').classList.remove('drawer-open');
+  $('#drawer').innerHTML = '';
+}
+
+/* ============================================================================
+ * 扫雷式探索: 点击 → 邻居加到画布 (只加不减)
+ *
+ * expandNode   异步入口 (串行队列, 503 降级)
+ * appendExpanded  真正往 NODE_DS/EDGE_DS 里追加 + 去重 + 摆位
+ * pickNode     "选中一个节点"的统一入口: 展开 + 聚焦 + 开抽屉
+ *              (画布点击之外的路径 —— 搜索、抽屉邻点 —— 都走它)
+ * ========================================================================== */
+
+// 边去重键: 同一对节点同一个关系名只留一条 (bundle 边和展开边 vocabulary 相同)
+function edgeKey(e){
+  const a = e.src < e.dst ? e.src : e.dst;
+  const b = e.src < e.dst ? e.dst : e.src;
+  return a + '\u0001' + b + '\u0001' + (e.rel || '');
+}
+
+function expandNode(uuid){
+  if(!BUNDLE || !NEO4J_OK || !$('#chk-expand').checked) return Promise.resolve();
+  const run = async () => {
+    let d;
+    try{
+      const r = await apiFetch(`${API}/expand?uuid=${encodeURIComponent(uuid)}&limit=24&depth=${EXPAND_DEPTH}`);
+      if(r.status === 404){ toast(L('节点不在图库里','Node not found in the graph')); return; }
+      if(!r.ok){
+        if(r.status === 503) NEO4J_OK = false;
+        toast(r.status === 503
+          ? L('本地 Neo4j 不可用, 展开已停用 (服务器模式只读数据包)','Local graph unavailable; expansion disabled (bundle-only mode)')
+          : L(`展开失败: HTTP ${r.status}`, `Expansion failed: HTTP ${r.status}`));
+        return;
+      }
+      d = await r.json();
+    }catch(err){
+      NEO4J_OK = false;
+      toast(L('展开失败: ','Expansion failed: ') + err.message);
+      return;
+    }
+    const got = appendExpanded(d);
+    if(got.nodes === 0 && got.edges === 0){
+      toast(L('这个节点的邻居都已在画布上','All neighbors are already in view'));
+    }else{
+      toast(L(`+${got.nodes} 节点 +${got.edges} 边 (${d.meta.depth || EXPAND_DEPTH} 跳, 已探索 ${fmt(EXTRA_NODES.length)})`,
+        `+${got.nodes} nodes +${got.edges} edges (${d.meta.depth || EXPAND_DEPTH} hops, ${fmt(EXTRA_NODES.length)} explored)`));
+    }
+  };
+  // 串行: 两次展开并发时, 各自的 dedup 集合看不到对方刚加的边, 会重复
+  EXPAND_CHAIN = EXPAND_CHAIN.then(run, run);
+  return EXPAND_CHAIN;
+}
+
+function appendExpanded(d){
+  const center = d.center;
+
+  // 1) 要新增的节点: center 本身 (搜索场景可能不在画布) + 没上画布的邻居
+  const wanted = [];
+  if(!NODE_DS.get(center.uuid)){
+    wanted.push({id: center.uuid, label: center.name || center.uuid.slice(0, 8),
+                 subtype: center.subtype, deg: center.deg || 0,
+                 suspicious: !!center.suspicious, kind: 'entity', extra: true,
+                 color: colorOf(center.subtype)});
+  }
+  for(const nb of d.neighbors){
+    if(!NODE_DS.get(nb.uuid)){
+      wanted.push({id: nb.uuid, label: nb.name || L('(无名)','(Unnamed)'), subtype: nb.subtype,
+                   deg: nb.deg || 0, suspicious: !!nb.suspicious,
+                   kind: 'entity', extra: true, color: colorOf(nb.subtype),
+                   parent: nb.parent || center.uuid});
+    }
+  }
+  let cut = false;
+  if(EXTRA_NODES.length + wanted.length > EXTRA_CAP){
+    wanted.length = Math.max(0, EXTRA_CAP - EXTRA_NODES.length);
+    cut = true;
+  }
+
+  // 2) 摆位: 每个新节点围绕它的 parent (从谁翻出来的) 撒一圈 —— 第 2/3 跳
+  //    落在各自源节点旁边, 而不是全挤在 center 周围 (BFS 多跳, 2026-09-05)。
+  //    黄金角撒点不用排序也均匀, 半径带抖动免得太像正圆。
+  //    ⚠ 本轮刚加的节点还没渲染, getPositions 拿不到 —— 坐标记在 anchorPos
+  //      自产自销; d.neighbors 是层序 (第一跳先), 后层的 parent 一定先就位。
+  let cx, cy;
+  const cp = NET.getPositions([center.uuid])[center.uuid];
+  if(cp){ cx = cp.x; cy = cp.y; }
+  else{ const vp = NET.getViewPosition(); cx = vp.x; cy = vp.y; }
+  const anchorPos = {[center.uuid]: {x: cx, y: cy}};
+  const anchorIdx = {};
+  const anchorOf = u => {
+    if(anchorPos[u]) return anchorPos[u];
+    const p = NET.getPositions([u])[u];
+    if(p){ anchorPos[u] = {x: p.x, y: p.y}; return anchorPos[u]; }
+    return anchorPos[center.uuid];   // parent 被 EXTRA_CAP 截断没上画布 → 退回 center
+  };
+  const maxDeg = Math.max(1, BUNDLE.nodes[0].d || 1);   // bundle 按度数降序, [0] 即最大
+  // 环半径贴近 springLength(165): 摆太远会被弹簧狠拉回来, 新节点剧烈震荡
+  // 几秒钟 —— 恰恰是用户最想点它们的时间窗。贴近平衡位 = 落地即稳。
+  const R = 165;
+  const GA = 2.39996;
+
+  const visNodes = wanted.map(n => {
+    const key = n.parent || center.uuid;
+    const anchor = anchorOf(key);
+    const i = (anchorIdx[key] = (anchorIdx[key] || 0) + 1);
+    const ang = i * GA;
+    const rr = R * (0.85 + 0.3 * ((i * 37) % 17) / 17);
+    const color = n.color;
+    const x = anchor.x + Math.cos(ang) * rr;
+    const y = anchor.y + Math.sin(ang) * rr;
+    anchorPos[n.id] = {x, y};
+    return {
+      id: n.id,
+      label: n.label,       // 已探索节点永远带标签 —— 是用户主动翻开的
+      title: `${n.label}\n${L('类型','Type')}: ${typeText(n)}\n${L('度数','Degree')}: ${fmt(n.deg)}`
+             + (n.twins > 1 ? L(`\n⚠ 图上另有 ${n.twins - 1} 个同名节点（橙框标示）`, `\n⚠ ${n.twins - 1} other nodes share this name (orange border)`) : '')
+             + (n.suspicious ? L('\n⚠ 类型存疑: 名字像国家/地区/组织', '\n⚠ Uncertain type: name resembles a place or organization') : '')
+             + L('\n(已探索)','\n(Explored)'),
+      // 最小值 9: 长尾节点按公式只有 ~4px 半径, 物理漂移下基本点不中 ——
+      // 刚翻开的格子是用户下一步要点的目标, 显眼 + 可点是这个功能的基本盘
+      value: Math.max(9, Math.sqrt(n.deg / maxDeg) * 42 + 3),
+      color: {background: color, border: borderOf(n, shade(color, -18))},
+      borderWidth: borderWidthOf(n),
+      shape: 'dot',
+      font: {size: Math.min(15, 9 + Math.sqrt(n.deg / maxDeg) * 7),
+             color:'#2c3542', strokeWidth: 2.4, strokeColor:'#ffffff'},
+      x, y,
+      _raw: n, _extra: true,
+      _color0: {background: color, border: borderOf(n, shade(color, -18))},
+      _label0: n.label,
+      _deg: n.deg || 0,
+    };
+  });
+  if(visNodes.length){
+    NODE_DS.add(visNodes);
+    EXTRA_NODES.push(...wanted);
+  }
+
+  // 3) 边: center-邻居 (每个关系名一条) + 邻居间诱导边; 两端都在画布上才加
+  // ⚠ 去重集必须覆盖 bundle **全量**边 (不只当前档位的): 两个池内节点之间的边
+  //   在低档位被过滤掉, 但档位切大就会现身 —— 不全量去重的话会画成双份。
+  const seen = new Set(ALL_EDGES.map(edgeKey));
+  {
+    const nodes = BUNDLE.nodes, rels = BUNDLE.rels;
+    for(let k = 0; k < BUNDLE.edges.length; k++){
+      const e = BUNDLE.edges[k];
+      const a = nodes[e[0]].id, b = nodes[e[1]].id;
+      const lo = a < b ? a : b, hi = a < b ? b : a;
+      seen.add(lo + '\u0001' + hi + '\u0001' + (rels[e[2]] || ''));
+    }
+  }
+  const cand = [];
+  for(const nb of d.neighbors){
+    if(!NODE_DS.get(nb.uuid)) continue;
+    // 边接到 parent (它从谁翻出来的), 多跳时不再全连 center
+    const src = nb.parent || center.uuid;
+    if(!NODE_DS.get(src)) continue;
+    for(const r of (nb.rels || [])){
+      cand.push({src, dst: nb.uuid, rel: r.rel || L('(无名)','(Unnamed)'), w: r.w, kind: 'semantic'});
+    }
+  }
+  for(const e of (d.inner_edges || [])){
+    if(!NODE_DS.get(e.src) || !NODE_DS.get(e.dst)) continue;
+    cand.push({src: e.src, dst: e.dst, rel: e.rel || L('(无名)','(Unnamed)'), w: e.w, kind: 'semantic'});
+  }
+  const newEdges = [];
+  for(const e of cand){
+    const k = edgeKey(e);
+    if(seen.has(k)) continue;
+    seen.add(k);
+    newEdges.push(e);
+  }
+  if(newEdges.length){
+    EDGE_DS.add(newEdges.map(e => ({
+      id: 'x' + (++EXTRA_SEQ), from: e.src, to: e.dst,
+      ...edgeVisProps(e),
+      hidden: $('#chk-hideother').checked && isOtherRel(e.rel),
+      _raw: e,
+    })));
+    EXTRA_EDGES.push(...newEdges);
+  }
+
+  // 4) 账本 (搜索/标签/抽屉逻辑的底账) 同步追加
+  ALL_NODES = ALL_NODES.concat(wanted);
+  ALL_EDGES = ALL_EDGES.concat(newEdges);
+  updateCoverage();
+  // 新节点落地 → 确保物理在跑, 让它们在缓扩场里自然沉降
+  if(visNodes.length) ensurePhysics();
+  if(cut) toast(L(`已达探索上限 (${fmt(EXTRA_CAP)}), 这轮只加了一部分`, `Exploration limit reached (${fmt(EXTRA_CAP)}); only part of this expansion was added`));
+  return {nodes: visNodes.length, edges: newEdges.length};
+}
+
+// "选中一个节点"的统一入口 (画布点击之外的路径都走它):
+// 先展开 (等节点真的上了画布), 再聚焦 + 开抽屉
+function pickNode(uuid){
+  hideFindList();
+  expandNode(uuid).then(() => {
+    if(NODE_DS.get(uuid)){
+      NET.selectNodes([uuid]);
+      NET.focus(uuid, {scale: 1.5, animation: {duration: 480}});
+    }
+    openNode(uuid);
+  });
+}
+
+/* ---------- 计数板 (bundle 模式唯一写入口, 含已探索增量) ---------- */
+
+function bundleIndexOf(uuid){
+  return BUNDLE_ID_INDEX.has(uuid) ? BUNDLE_ID_INDEX.get(uuid) : -1;
+}
+
+function updateCoverage(){
+  if(!BUNDLE) return;
+  const N = Math.min(BUNDLE_TIER || BUNDLE_MAX, BUNDLE.nodes.length);
+  let baseE = 0;
+  const src = BUNDLE.edges;
+  for(let k = 0; k < src.length; k++){
+    if(src[k][0] < N && src[k][1] < N) baseE++;
+  }
+  // 已探索的边只数两端都可见的 (bundle 端点在低档位时 vis 本来也不画)
+  let extraE = 0;
+  for(const e of EXTRA_EDGES){
+    const a = bundleIndexOf(e.src), b = bundleIndexOf(e.dst);
+    if((a < 0 || a < N) && (b < 0 || b < N)) extraE++;
+  }
+  const tot = (BUNDLE.overview && BUNDLE.overview.totals) || {};
+  const nTot = N + EXTRA_NODES.length;
+  let html = `${L('当前渲染','Showing')} <b>${fmt(nTot)}</b> ${L('节点',nTot === 1 ? 'node' : 'nodes')} / <b>${fmt(baseE + extraE)}</b> ${L('边',baseE + extraE === 1 ? 'edge' : 'edges')}`;
+  if(EXTRA_NODES.length){
+    html += ` <em>(Top ${fmt(N)} + ${L('已探索','explored')} ${fmt(EXTRA_NODES.length)})</em>`;
+  }else{
+    html += ` <em>(${L('全图的','of full graph')} ${(N / (tot.nodes||1) * 100).toFixed(3)}% / `
+          + `${(baseE / (tot.edges||1) * 100).toFixed(3)}%)</em>`
+          + `　${L('取样: 度数','Sample: degree')} Top ${fmt(N)}`;
+  }
+  if(RENDER_MS) html += `　<b>${L('坐标由本地预计算','Precomputed coordinates')}</b>, ${L('渲染','rendered in')} ${RENDER_MS}ms`;
+  $('#coverage').innerHTML = html;
+}
+
+/* ---------- 全图搜索下拉 + toast ---------- */
+
+function showFindList(matches){
+  const el = $('#find-list');
+  el.innerHTML = `<div class="find-head">${L(`全图匹配 ${matches.length} 条 · 点击加载到图谱 (含邻域)`, `${matches.length} matches across the graph · click to load with neighbors`)}</div>`
+    + matches.map(m => {
+      // 别名折叠 (2026-09-10): 消歧重复实体 (US/USA/America) 指向带 qid 的主词,
+      // 显示 "US → United States", 点击直接加载主词
+      const arrow = m.canonical
+        ? `<span class="tp" style="color:#1a7f5a">→ ${m.canonical.name}</span>` : '';
+      const star = m._alias_hit
+        ? `<span class="tp" style="color:#1a7f5a">${L('别名命中','Alias match')}</span>` : '';
+      return `
+      <div class="find-row" data-u="${m.canonical ? m.canonical.uuid : m.uuid}">
+        <i style="background:${colorOf(m.subtype)}"></i>
+        <span class="nm">${m.name || L('(无名)','(Unnamed)')}</span>
+        ${arrow}${star}
+        <span class="dg">${L('度','Degree')} ${fmt(m.deg)}</span>
+      </div>`;
+    }).join('');
+  el.classList.add('on');
+  el.querySelectorAll('.find-row').forEach(x => x.onclick = () => pickNode(x.dataset.u));
+}
+
+function hideFindList(){
+  $('#find-list').classList.remove('on');
+}
+
+var _toastTimer = null;
+function toast(msg){
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('on'), 2600);
+}
+
+/* ---------- 控件 ---------- */
+$$('#seg-depth button').forEach(b => b.onclick = () => {
+  $$('#seg-depth button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  EXPAND_DEPTH = +b.dataset.v;
+});
+
+$$('#seg-layer button').forEach(b => b.onclick = () => {
+  $$('#seg-layer button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  $('#wrap-newscap').style.display = b.dataset.v === 'knowledge' ? 'none' : 'block';
+});
+$('#seg-layer button.on') && ($('#wrap-newscap').style.display = 'none');
+
+$('#btn-reload').onclick = () => loadSubgraph().catch(err => ovl(true, L('加载失败: ','Loading failed: ') + err.message));
+$('#btn-relayout').onclick = () => {
+  if(!NET) return;
+  const heavy = ALL_EDGES.length > 8000;
+  ovl(true, L('重新布局中…','Rearranging the graph…'));
+  NET.setOptions({
+    physics: {
+      enabled: true, solver: 'barnesHut',
+      stabilization: {enabled: true, iterations: 150, updateInterval: 12, fit: true},
+    },
+    interaction: {hideEdgesOnDrag: heavy},
+  });
+  armLayout();
+};
+$('#chk-hideedges').onchange = applyEdgeVisibility;
+$('#chk-hideother').onchange = () => { OTHER_TOGGLED = true; applyEdgeVisibility(); };
+$('#chk-labels').onchange = applyEdgeVisibility;
+// bundle 模式切档位走 applyTier (换预计算坐标, 瞬时); 实时接口模式走 applyFocus
+$('#sel-focus').onchange = () => {
+  const v = parseInt($('#sel-focus').value, 10) || 0;
+  if(BUNDLE) applyTier(v);
+  else applyFocus();
+};
+$('#chk-animate').onchange = applyPhysicsMode;
+$('#search').onkeydown = async ev => {
+  if(ev.key !== 'Enter' || !NET) return;
+  const q = ev.target.value.trim();
+  if(!q) return;
+  hideFindList();
+  // 1) 先搜画布上已有的 (瞬时) —— 命中同样走 pickNode: 聚焦 + 开抽屉 + 补一圈邻域
+  const ql = q.toLowerCase();
+  const hit = ALL_NODES.find(n => (n.label || '').toLowerCase().includes(ql));
+  if(hit){
+    pickNode(hit.id);
+    return;
+  }
+  // 2) 画布没有 → 搜全图 22 万实体 (走本地 Neo4j /find; 服务器模式不可用)
+  if(!BUNDLE || !NEO4J_OK){
+    $('#coverage').innerHTML =
+      `<em>${L(`没找到包含 “${q}” 的节点`, `No node containing “${q}” found`)}${BUNDLE ? L(' — 全图搜索需要本地 Neo4j',' — full-graph search requires the local graph') : ''}</em>`;
+    return;
+  }
+  let d;
+  try{
+    const r = await apiFetch(`${API}/find?q=${encodeURIComponent(q)}`);
+    if(r.status === 503) NEO4J_OK = false;
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    d = await r.json();
+  }catch(err){
+    $('#coverage').innerHTML = `<em>${L('全图搜索失败','Full-graph search failed')}: ${err.message}</em>`;
+    return;
+  }
+  if(!d.matches.length){
+    $('#coverage').innerHTML = `<em>${L(`全图 22 万实体里也没有包含 “${q}” 的名字`, `No entity name containing “${q}” found in the full graph`)}</em>`;
+    return;
+  }
+  showFindList(d.matches);
+};
+// Esc / 点外面关掉全图搜索下拉
+$('#search').addEventListener('keyup', ev => { if(ev.key === 'Escape') hideFindList(); });
+document.addEventListener('click', ev => {
+  const el = $('#find-list');
+  if(el.classList.contains('on') && !el.contains(ev.target) && ev.target !== $('#search'))
+    hideFindList();
+});
+
+function ovl(on, text, soft){
+  const el = $('#ovl');
+  el.classList.toggle('on', !!on);
+  el.classList.toggle('soft', !!soft && !!on);   // soft = 顶部进度条, 不挡图
+  if(text) $('#ovl-text').textContent = text;
+}
+
+/* ---------- 启动 ---------- */
+
+// bundle 模式: 档位下拉改成从 bundle 的 tiers 动态生成。
+// 实时接口模式只有 600/1500/3000/6000 几档且每次切都要重新查图;
+// bundle 模式的档位是本地预计算好的, 切换瞬时。
+function buildTierOptions(){
+  const sel = $('#sel-focus');
+  if(!sel || !BUNDLE) return;
+  const tiers = Object.keys(BUNDLE.tiers).map(Number).sort((a,b) => a-b);
+  sel.innerHTML = `<option value="${BUNDLE_MAX}">${L('全图','Full view')} (Top ${fmt(BUNDLE_MAX)})</option>`
+    + tiers.map(t => `<option value="${t}">Top ${fmt(t)}</option>`).join('');
+  sel.value = String(BUNDLE_MAX);
+}
+
+(async function boot(){
+  if(typeof vis === 'undefined'){
+    ovl(true, L('vis-network 没加载出来 (需要访问 unpkg.com)。请检查网络后刷新。','The graph renderer could not load. Check your connection and refresh.'));
+    return;
+  }
+  try{
+    // ★ 优先走预计算数据包。服务器上没有 Neo4j, 实时接口在那里根本跑不了;
+    //   而且就算能跑, 浏览器现场算布局要十几秒。bundle 是唯一能秒开的路径。
+    //   ?mode=realtime 强制走实时接口 —— 留给回归脚本和排障对比用, 平时别带。
+    const forceRt = new URLSearchParams(location.search).get('mode') === 'realtime';
+    const b = forceRt ? null : await loadBundle();
+    if(b){
+      BUNDLE = b;
+      BUNDLE_MAX = Math.max(...Object.keys(b.tiers).map(Number));
+      BUNDLE_ID_INDEX = new Map(b.nodes.map((n, i) => [n.id, i]));
+      renderOverview(b.overview);
+      buildTierOptions();
+      renderFromBundle(BUNDLE_MAX);
+      // 实时模式专属控件 (图层/Top-N/重新加载) 在 bundle 下全部失效 ——
+      // 挂在页面上只会跟档位选择器混淆 (2026-09-04 用户反馈"Top-N 和聚焦啥区别")。
+      $$('.rt-only').forEach(el => el.style.display = 'none');
+      const lf = $('#lbl-focus');
+      if(lf) lf.textContent = L('图规模','Graph size');   // bundle 下这个下拉是档位选择器, 不是"聚焦"
+      // 数据源标注: 让人一眼看出这是本地预计算的数据, 不是实时查图
+      const src = $('#bundle-note');
+      if(src){
+        src.innerHTML = `<b>${L('数据来源','Data source')}</b>: ${L('本地预计算数据包','locally precomputed bundle')} (${b.generated_at})　`
+          + L('坐标由 networkx 力导向算出, 浏览器零布局等待','Coordinates are precomputed with networkx; no browser layout wait');
+      }
+      return;
+    }
+    // 回退: 直连 Neo4j 的实时接口。只有本地开发时能用 —— 服务器没图库。
+    await loadOverview();
+    await loadSubgraph();
+  }catch(err){
+    ovl(true, L('加载失败: ','Loading failed: ') + err.message);
+  }
+})();
+</script>
+</body>
+</html>
