@@ -7,46 +7,38 @@
   <main id="main">
     <section class="page-hero wrap"><p class="eyebrow"><span class="eyebrow-line"></span> Causals Graph</p><h1>From a connection<br>to an <em>inspectable explanation.</em></h1><p class="lede">The graph records entities, events, relationships, and their supporting context. It is designed to help trace possible transmission paths while keeping claims, observations, and hypotheses distinct.</p><div class="actions"><a class="button button-primary" href="explore/">Explore the live graph ↗</a><a class="text-link" href="download/">Download a fixed snapshot →</a></div></section>
     <section class="content-section wrap graph-examples" id="graph-examples">
-      <div class="graph-examples-heading"><div><p class="section-label">From the released graph · v0.1.0-2026-10-09</p><h2>Real records. Inspectable links.</h2></div><div class="graph-example-controls"><span class="graph-example-count" aria-live="polite">01 / 03</span><button type="button" class="graph-example-prev" aria-label="Previous graph example">←</button><button type="button" class="graph-example-next" aria-label="Next graph example">→</button></div></div>
+      <div class="graph-examples-heading"><div><p class="section-label">Causals Graph · v0.1.0-2026-10-09</p><h2>Examples of nodes and edges</h2></div><div class="graph-example-controls"><span class="graph-example-count" aria-live="polite">01 / 03</span><button type="button" class="graph-example-prev" aria-label="Previous graph example">←</button><button type="button" class="graph-example-next" aria-label="Next graph example">→</button></div></div>
       <div class="graph-example-carousel" role="region" aria-roledescription="carousel" aria-label="Three recorded subgraphs from the public snapshot">
-        <article class="graph-example-slide" aria-label="Example 1 of 3: oil production and shipping route">
-          <div class="graph-example-intro"><span>01 / ENERGY · BRANCHING SUBGRAPH</span><h3>Crude oil and a shipping route</h3><p>The snapshot records production links for Saudi Arabia and the United Arab Emirates, plus a route link for crude oil.</p></div>
-          <div class="actual-network" role="img" aria-label="Saudi Arabia and United Arab Emirates each PRODUCES Crude Oil; Crude Oil SHIPS_VIA Strait of Hormuz">
-            <div class="actual-node-stack"><div class="actual-node"><small>LOCATION</small><strong>Saudi Arabia</strong></div><div class="actual-node"><small>LOCATION</small><strong>United Arab Emirates</strong></div></div>
-            <span class="actual-relation">PRODUCES <b aria-hidden="true">→</b></span>
-            <div class="actual-node"><small>COMMODITY</small><strong>Crude Oil</strong></div>
+        <article class="graph-example-slide" aria-label="Example 1 of 3: Red Sea links">
+          <div class="actual-network" role="img" aria-label="Houthi militia AFFECTS Red Sea; Crude Oil SHIPS_VIA Red Sea; Red Sea AFFECTS WTI crude">
+            <div class="actual-node-stack"><div class="actual-node"><small>ORGANIZATION</small><strong>Houthi militia</strong></div><div class="actual-node"><small>COMMODITY</small><strong>Crude Oil</strong></div></div>
+            <div class="actual-relation-stack"><span class="actual-relation">AFFECTS <b aria-hidden="true">→</b></span><span class="actual-relation">SHIPS_VIA <b aria-hidden="true">→</b></span></div>
+            <div class="actual-node"><small>LOCATION</small><strong>Red Sea</strong></div>
+            <span class="actual-relation">AFFECTS <b aria-hidden="true">→</b></span>
+            <div class="actual-node"><small>INDEX</small><strong>WTI crude</strong></div>
+          </div>
+          <details class="graph-example-records"><summary>Edge IDs and source counts</summary><ul><li>Houthi militia <code>AFFECTS</code> Red Sea — <code>fffb338f-57ae-4566-acc9-e4edffdf79e8</code>; 4 source-news IDs.</li><li>Crude Oil <code>SHIPS_VIA</code> Red Sea — <code>68c24879-a541-43db-8b05-763e2af812ea</code>; 11 source-news IDs.</li><li>Red Sea <code>AFFECTS</code> WTI crude — <code>d3b69d5d-f179-455c-b2f0-20a3063b1d40</code>; 2 source-news IDs.</li></ul></details>
+        </article>
+        <article class="graph-example-slide" aria-label="Example 2 of 3: Federal Reserve and markets" hidden>
+          <div class="actual-network actual-network-fan" role="img" aria-label="Federal Reserve AFFECTS Dow Jones Industrial Average, Indian rupee, and Silver">
+            <div class="actual-node"><small>ORGANIZATION</small><strong>Federal Reserve</strong></div>
+            <div class="actual-relation-stack actual-relation-stack-three"><span class="actual-relation">AFFECTS <b aria-hidden="true">→</b></span><span class="actual-relation">AFFECTS <b aria-hidden="true">→</b></span><span class="actual-relation">AFFECTS <b aria-hidden="true">→</b></span></div>
+            <div class="actual-node-stack actual-node-stack-three"><div class="actual-node"><small>INDEX</small><strong>Dow Jones Industrial Average</strong></div><div class="actual-node"><small>CURRENCY</small><strong>Indian rupee</strong></div><div class="actual-node"><small>COMMODITY</small><strong>Silver</strong></div></div>
+          </div>
+          <details class="graph-example-records"><summary>Edge IDs and source counts</summary><ul><li>Federal Reserve <code>AFFECTS</code> Dow Jones Industrial Average — <code>93d65c52-069b-4cb6-9117-1a6901948f5a</code>; 5 source-news IDs.</li><li>Federal Reserve <code>AFFECTS</code> Indian rupee — <code>9dae5ed8-668e-4336-a474-f8bfa2c0888e</code>; 3 source-news IDs.</li><li>Federal Reserve <code>AFFECTS</code> Silver — <code>7c4b0a35-d9db-4f1b-8c25-8bfa52837b0e</code>; 2 source-news IDs.</li></ul></details>
+        </article>
+        <article class="graph-example-slide" aria-label="Example 3 of 3: Black Sea wheat links" hidden>
+          <div class="actual-network" role="img" aria-label="Russia and Ukraine each PRODUCES Wheat; Wheat SHIPS_VIA Black Sea">
+            <div class="actual-node-stack"><div class="actual-node"><small>LOCATION</small><strong>Russia</strong></div><div class="actual-node"><small>LOCATION</small><strong>Ukraine</strong></div></div>
+            <div class="actual-relation-stack"><span class="actual-relation">PRODUCES <b aria-hidden="true">→</b></span><span class="actual-relation">PRODUCES <b aria-hidden="true">→</b></span></div>
+            <div class="actual-node"><small>COMMODITY</small><strong>Wheat</strong></div>
             <span class="actual-relation">SHIPS_VIA <b aria-hidden="true">→</b></span>
-            <div class="actual-node"><small>LOCATION</small><strong>Strait of Hormuz</strong></div>
+            <div class="actual-node"><small>LOCATION</small><strong>Black Sea</strong></div>
           </div>
-          <p class="caption">These are three separate graph records. They do not show what share of either country's oil travels through this route, or establish a price effect.</p>
-          <details class="graph-example-records"><summary>Inspect record IDs and source counts</summary><ul><li>Saudi Arabia <code>PRODUCES</code> Crude Oil — edge <code>c08e2dd8-baf0-47dd-a13c-9b05f745d3f9</code>; 46 source-news IDs.</li><li>United Arab Emirates <code>PRODUCES</code> Crude Oil — edge <code>c0f091d6-15e6-4f15-865c-299d930e8ff1</code>; 14 source-news IDs.</li><li>Crude Oil <code>SHIPS_VIA</code> Strait of Hormuz — edge <code>3dcaeefe-35fd-4710-ae6d-1a983acfab4b</code>; 140 source-news IDs.</li></ul></details>
-        </article>
-        <article class="graph-example-slide" aria-label="Example 2 of 3: shared semiconductor supplier" hidden>
-          <div class="graph-example-intro"><span>02 / SEMICONDUCTORS · ONE-TO-MANY NETWORK</span><h3>One supplier, two product lines</h3><p>The snapshot links TSMC to Apple and Nvidia, then each company to a named product.</p></div>
-          <div class="actual-network" role="img" aria-label="TSMC SUPPLIES Apple and Nvidia; Apple PRODUCES Apple Watch; Nvidia PRODUCES H100">
-            <div class="actual-node"><small>COMPANY</small><strong>TSMC</strong></div>
-            <span class="actual-relation">SUPPLIES <b aria-hidden="true">→</b></span>
-            <div class="actual-node-stack"><div class="actual-node"><small>COMPANY</small><strong>Apple</strong></div><div class="actual-node"><small>COMPANY</small><strong>Nvidia</strong></div></div>
-            <span class="actual-relation">PRODUCES <b aria-hidden="true">→</b></span>
-            <div class="actual-node-stack"><div class="actual-node"><small>ENTITY</small><strong>Apple Watch</strong></div><div class="actual-node"><small>ENTITY</small><strong>H100</strong></div></div>
-          </div>
-          <p class="caption">The two adjacent records for each branch do not, by themselves, prove that a particular TSMC component is inside a particular product.</p>
-          <details class="graph-example-records"><summary>Inspect record IDs and source counts</summary><ul><li>TSMC <code>SUPPLIES</code> Apple — edge <code>3d846f73-fd62-4b37-aecf-0165f8bdd120</code>; 8 source-news IDs.</li><li>TSMC <code>SUPPLIES</code> Nvidia — edge <code>c535158e-9bed-4094-84f6-64ca944c8b6a</code>; 18 source-news IDs.</li><li>Apple <code>PRODUCES</code> Apple Watch — edge <code>8ff831aa-12b4-4134-a98d-586e50807617</code>; 9 source-news IDs.</li><li>Nvidia <code>PRODUCES</code> H100 — edge <code>230b3eec-0ded-42ff-b599-aa55e03a715e</code>; 10 source-news IDs.</li></ul></details>
-        </article>
-        <article class="graph-example-slide" aria-label="Example 3 of 3: hardware supplier and gaming platform" hidden>
-          <div class="graph-example-intro"><span>03 / TECHNOLOGY · TWO-LINK PATH</span><h3>A supplier and a gaming platform</h3><p>The snapshot records a supplier relationship and an ownership relationship in the same neighborhood.</p></div>
-          <div class="actual-network" role="img" aria-label="Nvidia SUPPLIES Microsoft; Microsoft OWNS Xbox">
-            <div class="actual-node"><small>COMPANY</small><strong>Nvidia</strong></div>
-            <span class="actual-relation">SUPPLIES <b aria-hidden="true">→</b></span>
-            <div class="actual-node"><small>COMPANY</small><strong>Microsoft</strong></div>
-            <span class="actual-relation">OWNS <b aria-hidden="true">→</b></span>
-            <div class="actual-node"><small>ENTITY</small><strong>Xbox</strong></div>
-          </div>
-          <p class="caption">This path is useful for investigation, but it is not proof of a specific purchase, deployment, causal effect, or market forecast.</p>
-          <details class="graph-example-records"><summary>Inspect record IDs and source counts</summary><ul><li>Nvidia <code>SUPPLIES</code> Microsoft — edge <code>5d71ca88-cacb-49f2-997a-3f072116efd8</code>; 23 source-news IDs.</li><li>Microsoft <code>OWNS</code> Xbox — edge <code>7e65c654-0e15-4be4-b053-6c69a4c70c83</code>; 2 source-news IDs.</li></ul></details>
+          <details class="graph-example-records"><summary>Edge IDs and source counts</summary><ul><li>Russia <code>PRODUCES</code> Wheat — <code>6045b66b-d86f-4227-a4d8-0a716afb6492</code>; 14 source-news IDs.</li><li>Ukraine <code>PRODUCES</code> Wheat — <code>95717613-d400-4871-ae2f-4f940f1b4172</code>; 13 source-news IDs.</li><li>Wheat <code>SHIPS_VIA</code> Black Sea — <code>998c7b77-51da-44eb-b7c2-d787fcf60e0b</code>; 2 source-news IDs.</li></ul></details>
         </article>
       </div>
-      <p class="graph-example-note">All names and edge IDs above occur in the <a href="https://huggingface.co/datasets/causals-lab/causals-graph">released snapshot</a>, not a hypothetical diagram. Source-news IDs are recorded, but article text and URLs are not part of this release. Recorded links have not been individually verified by an independent review.</p>
+      <p class="graph-example-note">Edges shown are recorded in the <a href="https://huggingface.co/datasets/causals-lab/causals-graph">public snapshot</a>; they are not independently verified causal effects.</p>
     </section>
     <section class="content-section wrap two-col"><div class="prose"><p class="section-label">What the graph holds</p><h2>More than arrows.</h2><p>Some relationships describe physical flows, such as production or supply. Others describe capital and obligations. Some record where a person works or where an entity is located. Events and their reported effects form another layer.</p><p>Only relationships with an explicit transmission meaning should participate in a propagation calculation. A descriptive edge remains useful for search and context without becoming a causal shortcut.</p><a class="inline-link" href="ontology.html">Read the public ontology ↗</a></div><div class="callout"><strong>Important distinction</strong><br>A graph path suggests a mechanism worth investigating. It does not establish that an intervention would cause the same result, or that an asset will move in a predicted direction.</div></section>
     <section class="content-section wrap"><div class="section-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> How to examine an answer</p><h2>Ask three questions.</h2></div></div><div class="three-col"><article class="info-card"><span class="card-kicker">01 / MEANING</span><h3>What does each edge mean?</h3><p>Check direction, relationship type, scope, and whether the link is descriptive or part of a proposed transmission route.</p></article><article class="info-card"><span class="card-kicker">02 / EVIDENCE</span><h3>What supports it?</h3><p>Follow sources, provenance, time context, and counterevidence. A cited statement and a measured effect are not interchangeable.</p></article><article class="info-card"><span class="card-kicker">03 / VALIDATION</span><h3>What happened before?</h3><p>Where historical testing exists, examine the sample and misses alongside any summary statistic.</p></article></div></section>
