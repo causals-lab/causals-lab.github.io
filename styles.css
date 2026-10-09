@@ -137,6 +137,36 @@ h2{font-size:clamp(2.9rem,4.25vw,5rem);line-height:1.1;letter-spacing:-.055em;ma
 .example-path small{display:block;color:#7ee0ca;letter-spacing:.13em;font-size:.66rem;font-weight:800;margin-bottom:12px}
 .example-path strong{font:400 1.36rem Georgia,serif}
 .example-path>span{color:#e2b472;text-align:center;font-size:1.5rem}
+.graph-examples-heading{display:flex;align-items:end;justify-content:space-between;gap:28px;margin-bottom:30px}
+.graph-examples-heading h2{font-size:clamp(2.5rem,4vw,4.4rem)}
+.graph-example-controls{display:flex;align-items:center;gap:9px;flex:none}
+.graph-example-count{color:#a9c4bf;font-size:.77rem;font-weight:750;letter-spacing:.12em;margin-right:12px;white-space:nowrap}
+.graph-example-controls button{width:45px;height:45px;border:1px solid #7ee0ca78;background:#123038;color:#7ee0ca;cursor:pointer;font-size:1.3rem;transition:background .2s,color .2s}
+.graph-example-controls button:hover,.graph-example-controls button:focus-visible{background:#7ee0ca;color:#0c1820}
+.graph-example-carousel{border:1px solid #ffffff35;background:radial-gradient(circle at 80% 0,#21434a66,transparent 45%),#142b33;padding:32px}
+.graph-example-slide[hidden]{display:none}
+.graph-example-intro{max-width:830px}
+.graph-example-intro span{display:block;color:#7ee0ca;font-size:.7rem;font-weight:800;letter-spacing:.15em;margin-bottom:18px}
+.graph-example-intro h3{font-size:clamp(1.9rem,3vw,3rem);letter-spacing:-.045em;margin:0 0 12px}
+.graph-example-intro p{color:#b8cbc7;line-height:1.7;font-size:.94rem;margin:0 0 28px}
+.actual-network{display:grid;grid-template-columns:minmax(0,1fr) minmax(95px,.48fr) minmax(0,1fr) minmax(95px,.48fr) minmax(0,1fr);align-items:stretch;gap:12px;overflow-x:auto}
+.actual-node-stack{display:grid;grid-template-rows:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
+.actual-node{display:flex;flex-direction:column;justify-content:center;gap:12px;min-height:120px;padding:20px;border:1px solid #83bbb174;background:#0e2028;min-width:0}
+.actual-node small{color:#7ee0ca;font-size:.65rem;font-weight:800;letter-spacing:.14em}
+.actual-node strong{font:400 clamp(1.25rem,1.8vw,1.95rem)/1.14 Georgia,"Times New Roman",serif;overflow-wrap:anywhere}
+.actual-relation{align-self:center;display:flex;align-items:center;justify-content:center;gap:7px;color:#e2b472;font-size:.68rem;font-weight:800;letter-spacing:.05em;text-align:center;overflow-wrap:anywhere}
+.actual-relation b{font-size:1.6rem;font-weight:400;line-height:1}
+.graph-example-slide .caption{margin:23px 0 0}
+.graph-example-records{margin-top:24px;border-top:1px solid #ffffff30;padding-top:20px;color:#b8cbc7;font-size:.82rem;line-height:1.7}
+.graph-example-records summary{width:fit-content;color:#7ee0ca;cursor:pointer;font-weight:750}
+.graph-example-records summary:hover{text-decoration:underline;text-underline-offset:4px}
+.graph-example-records ul{margin:16px 0 0;padding-left:19px}
+.graph-example-records li{margin:8px 0}
+.graph-example-records code{color:#e2b472;overflow-wrap:anywhere}
+.graph-example-note{color:#93ada8;font-size:.82rem;line-height:1.7;margin:20px 0 0;max-width:1000px}
+.graph-example-note a{color:#7ee0ca;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:900px){.actual-network{grid-template-columns:190px 100px 190px 100px 190px}.actual-node strong{font-size:1.45rem}}
+@media(max-width:680px){.graph-examples-heading{display:block}.graph-example-controls{margin-top:24px}.graph-example-carousel{padding:20px}.actual-network{grid-template-columns:155px 83px 155px 83px 155px;gap:8px}.actual-node-stack{gap:8px}.actual-node{min-height:105px;padding:13px}.actual-node strong{font-size:1.2rem}.actual-relation{font-size:.56rem;gap:3px}.actual-relation b{font-size:1.2rem}}
 .caption{color:#8daaa5;font-size:.81rem;line-height:1.65;margin-top:18px}
 .steps{counter-reset:step;list-style:none;padding:0;margin:0;border-top:1px solid #ffffff27}
 .steps li{counter-increment:step;display:grid;grid-template-columns:60px 1fr;gap:14px;border-bottom:1px solid #ffffff27;padding:23px 0;color:#b8cbc7;line-height:1.7}
