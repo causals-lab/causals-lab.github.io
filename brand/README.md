@@ -28,6 +28,6 @@ The mint path is solid; the amber alternative is dotted and ends open. Do not tu
 
 Use a clean system sans-serif for navigation and wordmarks; editorial serif headings can use Georgia. In GitHub's circular avatar crop, use the square `avatar-512.png`; all four nodes fit inside the safe central circle. Use the simplified `favicon.svg` at browser-tab sizes. For print or high-resolution work, use the SVG masters rather than enlarging a PNG.
 
-## Relationship to the app
+## Scope
 
-Causals Lab's visual identity identifies the open research initiative. Moirai is a separate application and should not adopt the Lab mark as a product badge without a distinct product-brand decision.
+Causals Lab's visual identity identifies the research initiative and its public project materials.
