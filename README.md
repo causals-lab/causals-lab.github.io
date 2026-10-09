@@ -1,6 +1,6 @@
 # Causals Lab website
 
-This repository contains the public website for [Causals Lab](https://causals.org). It is a static HTML/CSS site; the graph-building system and data are not included.
+This repository contains the public website for [Causals Lab](https://causals.org). It is a static HTML/CSS site; the graph-building system and data are not included. The [download page](https://causals.org/download/) links to versioned graph files in the public [community repository](https://github.com/causals-lab/community/tree/main/data).
 
 The community contribution process lives in [causals-lab/community](https://github.com/causals-lab/community). Publication and reuse terms for the ontology, graph, benchmarks, and implementation are handled separately in that repository's [OPENNESS.md](https://github.com/causals-lab/community/blob/main/OPENNESS.md).
 
