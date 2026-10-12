@@ -6,6 +6,10 @@ The community contribution process lives in [causals-lab/community](https://gith
 
 The website is intended to be served by GitHub Pages. Edit the HTML files and `styles.css` at the repository root, then review the preview before publishing. No software license has been declared for this repository yet.
 
+## Public copy rule
+
+Write for someone discovering Causals Lab for the first time. Describe what a visitor can see, download, do, and verify. Explain limitations in terms of the artifact itself; do not volunteer internal product relationships, unpublished fields, or development decisions that the reader has no reason to know. For example, explain that `source_episode_ids` point to source-news records in the graph, rather than saying that article URLs were "not released." Check every page against this rule before publishing.
+
 ## Explore viewer
 
 `explore/viewer.html` and its local `vis-network` asset are generated from the
